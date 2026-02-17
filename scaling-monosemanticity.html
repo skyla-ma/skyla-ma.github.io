@@ -25,13 +25,13 @@
     </p>
 
     <p>
-    The goal of the work is to address polysemanticity, where individual neurons respond to many unrelated patterns, which makes internal model representations difficult to interpret. The authors aim to separate these mixed signals into features that correspond more cleanly to specific concepts.
+    The goal of the paper is to address polysemanticity, where individual neurons respond to many unrelated patterns, making internal model representations hard to interpret. The paper talks about separating these mixed signals into features that correspond more cleanly to specific concepts.
     </p>
     
     <h3>Method</h3>
     
     <p>
-    They apply sparse autoencoders (SAEs) to activations from a layer of Claude 3. The autoencoder is trained to reconstruct the original activations, but under a sparsity constraint: only a small number of learned features can be active at a time. The model therefore represents each activation vector as a combination of a few elements from a large learned dictionary.
+    They apply sparse autoencoders (SAEs) to activations from a layer of Claude 3. The autoencoder is trained to reconstruct the original activations, but under a sparsity constraint: only a small number of learned features can be active at a time. Thus, the model represents each activation vector as a combination of a few elements from a large learned dictionary.
     </p>
     
     <p>
@@ -42,12 +42,12 @@
     
     <h4>Scale</h4>
     <p>
-    The method is applied to a large production model (Claude 3), producing millions of learned features. This extends earlier work that demonstrated similar behavior in smaller transformer models.
+    The method is applied to Claude 3, producing millions of learned features. They had already demonstrated similar behavior in smaller transformer models, but in this paper they extend that to a large production model.
     </p>
     
     <h4>Granularity</h4>
     <p>
-    Many learned features correspond to specific patterns in data, including:
+    Many learned features correspond to specific patterns in data, such as:
     </p>
     
     <ul>
@@ -65,19 +65,19 @@
     <h3>Causal testing</h3>
     
     <p>
-    To test whether features influence model behavior, the authors intervene during inference by forcing certain features to remain active (“clamping”). This changes the model’s outputs in ways consistent with the feature’s associated concept. The interventions show that these features participate in generating behavior, not just correlating with it.
+    To test whether features influence model behavior, they intervene during inference by forcing certain features to remain active (clamping). This changes the model’s outputs in ways consistent with the feature’s associated concept. The interventions show that these features participate in generating behavior, not just correlating with it.
     </p>
     
     <h3>Coverage and limitations</h3>
     
     <ul>
       <li>Not all learned features are interpretable.</li>
-      <li>Some features rarely activate (“dead features”).</li>
+      <li>Some features rarely activate (dead features).</li>
       <li>Some still combine multiple concepts rather than representing a single one.</li>
       <li>Training SAEs and running them across layers is computationally expensive.</li>
     </ul>
     
-    <h3>Overall technical result</h3>
+    <h3>Overall summary</h3>
     
     <p>
     Sparse autoencoders can decompose internal activations of a frontier language model into a large set of sparse features that correspond to identifiable patterns in data. These features can be measured, analyzed, and causally manipulated, providing a method for studying internal representations at scale.
