@@ -1,0 +1,40 @@
+<h2>Blog</h2>
+
+<h3>
+  <a href="https://transformer-circuits.pub/2024/scaling-monosemanticity/">
+    Scaling Monosemanticity — Technical Notes
+  </a>
+</h3>
+
+<p>
+The goal of the work is to address polysemanticity, where individual neurons respond to many unrelated patterns, which makes internal model representations difficult to interpret. The authors aim to separate these mixed signals into features that correspond more cleanly to specific concepts.
+</p>
+
+<p><strong>Method:</strong></p>
+<p>
+Sparse autoencoders (SAEs) are applied to activations from a layer of Claude 3. The autoencoder is trained to reconstruct the original activations under a sparsity constraint, meaning only a small number of learned features can be active at once. Each activation is represented as a combination of a few elements from a large learned dictionary.
+</p>
+
+<p><strong>Findings:</strong></p>
+<ul>
+  <li>Scaled to a frontier model (Claude 3) and produced millions of learned features.</li>
+  <li>Features correspond to specific patterns such as programming topics, places, medical language, and behavioral signals.</li>
+  <li>Features activate selectively when related content appears in input.</li>
+</ul>
+
+<p><strong>Causal testing:</strong></p>
+<p>
+During inference, features can be forced to remain active (“clamped”), which changes model outputs in ways consistent with the feature’s associated concept.
+</p>
+
+<p><strong>Limitations:</strong></p>
+<ul>
+  <li>Some features are not interpretable.</li>
+  <li>Some rarely activate (“dead features”).</li>
+  <li>Some still mix multiple concepts.</li>
+  <li>The process is computationally expensive.</li>
+</ul>
+
+<p>
+Overall, sparse autoencoders can decompose internal activations into sparse features that correspond to identifiable patterns and can be measured and manipulated.
+</p>
