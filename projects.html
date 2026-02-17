@@ -10,31 +10,57 @@
 The goal of the work is to address polysemanticity, where individual neurons respond to many unrelated patterns, which makes internal model representations difficult to interpret. The authors aim to separate these mixed signals into features that correspond more cleanly to specific concepts.
 </p>
 
-<p><strong>Method:</strong></p>
+<h3>Method</h3>
+
 <p>
-Sparse autoencoders (SAEs) are applied to activations from a layer of Claude 3. The autoencoder is trained to reconstruct the original activations under a sparsity constraint, meaning only a small number of learned features can be active at once. Each activation is represented as a combination of a few elements from a large learned dictionary.
+They apply sparse autoencoders (SAEs) to activations from a layer of Claude 3. The autoencoder is trained to reconstruct the original activations, but under a sparsity constraint: only a small number of learned features can be active at a time. The model therefore represents each activation vector as a combination of a few elements from a large learned dictionary.
 </p>
 
-<p><strong>Findings:</strong></p>
-<ul>
-  <li>Scaled to a frontier model (Claude 3) and produced millions of learned features.</li>
-  <li>Features correspond to specific patterns such as programming topics, places, medical language, and behavioral signals.</li>
-  <li>Features activate selectively when related content appears in input.</li>
-</ul>
-
-<p><strong>Causal testing:</strong></p>
 <p>
-During inference, features can be forced to remain active (“clamped”), which changes model outputs in ways consistent with the feature’s associated concept.
+Because only a limited number of features are allowed to fire, the system is encouraged to represent signals using more specific and distinct components rather than blended ones. Each learned feature corresponds to a direction in activation space that contributes to reconstructing the original signal.
 </p>
 
-<p><strong>Limitations:</strong></p>
+<h3>Findings</h3>
+
+<h4>Scale</h4>
+<p>
+The method is applied to a large production model (Claude 3), producing millions of learned features. This extends earlier work that demonstrated similar behavior in smaller transformer models.
+</p>
+
+<h4>Granularity</h4>
+<p>
+Many learned features correspond to specific patterns in data, including:
+</p>
+
 <ul>
-  <li>Some features are not interpretable.</li>
-  <li>Some rarely activate (“dead features”).</li>
-  <li>Some still mix multiple concepts.</li>
-  <li>The process is computationally expensive.</li>
+  <li>programming concepts and error types</li>
+  <li>named entities and places</li>
+  <li>transportation systems</li>
+  <li>medical and scientific topics</li>
+  <li>social and behavioral patterns such as persuasion or deception</li>
 </ul>
 
 <p>
-Overall, sparse autoencoders can decompose internal activations into sparse features that correspond to identifiable patterns and can be measured and manipulated.
+These features activate selectively when related content appears in the input.
+</p>
+
+<h3>Causal testing</h3>
+
+<p>
+To test whether features influence model behavior, the authors intervene during inference by forcing certain features to remain active (“clamping”). This changes the model’s outputs in ways consistent with the feature’s associated concept. The interventions show that these features participate in generating behavior, not just correlating with it.
+</p>
+
+<h3>Coverage and limitations</h3>
+
+<ul>
+  <li>Not all learned features are interpretable.</li>
+  <li>Some features rarely activate (“dead features”).</li>
+  <li>Some still combine multiple concepts rather than representing a single one.</li>
+  <li>Training SAEs and running them across layers is computationally expensive.</li>
+</ul>
+
+<h3>Overall technical result</h3>
+
+<p>
+Sparse autoencoders can decompose internal activations of a frontier language model into a large set of sparse features that correspond to identifiable patterns in data. These features can be measured, analyzed, and causally manipulated, providing a method for studying internal representations at scale.
 </p>
