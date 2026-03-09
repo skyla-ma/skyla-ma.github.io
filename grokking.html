@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Grokking — Technical Summary</title>
+  <style>
+    body {
+      font-family: Georgia, serif;
+      max-width: 680px;
+      margin: 60px auto;
+      padding: 0 24px;
+      color: #1a1a1a;
+      line-height: 1.7;
+      font-size: 16px;
+    }
+
+    nav {
+      margin-bottom: 48px;
+      font-family: sans-serif;
+      font-size: 14px;
+    }
+
+    nav a {
+      color: #555;
+      text-decoration: none;
+      margin-right: 16px;
+    }
+
+    nav a:hover { text-decoration: underline; }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 8px;
+      line-height: 1.3;
+    }
+
+    .source-link {
+      font-family: sans-serif;
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 28px;
+    }
+
+    .source-link a { color: #555; }
+
+    p { margin-bottom: 16px; }
+
+    h3 {
+      font-size: 16px;
+      margin-top: 28px;
+      margin-bottom: 6px;
+      font-family: sans-serif;
+    }
+
+    ul {
+      padding-left: 22px;
+      margin-bottom: 16px;
+    }
+
+    ul li { margin-bottom: 6px; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="/">Home</a>
+  <a href="/about.html">About</a>
+  <a href="/projects.html">Blog</a>
+</nav>
+
+<h1>Grokking — Technical Summary</h1>
+
+<div class="source-link">
+  Original paper: <a href="https://arxiv.org/abs/2201.02177">https://arxiv.org/abs/2201.02177</a>
+</div>
+
+<p>The goal of the paper is to study a weird training phenomenon they call "grokking": neural networks that first memorize a training set completely, then — much later, sometimes thousands of times more training steps later — suddenly learn to generalize. The two events are cleanly separated in time, which makes this setting useful for studying generalization in isolation.</p>
+
+<h3>Setup</h3>
+
+<p>They train small transformers on algorithmically generated datasets: binary operation tables of the form a ◦ b = c, where each symbol is a distinct abstract token with no internal structure. The model doesn't see numbers in decimal or permutations in any familiar notation — just abstract symbols and how they interact. The task is to fill in held-out entries of the table, like a Sudoku where none of the cells give you hints.</p>
+
+<p>Operations include modular addition, subtraction, division (mod 97), and composition of permutations in S₅. The model is a 2-layer transformer with ~400K non-embedding parameters, trained with AdamW.</p>
+
+<h3>The phenomenon</h3>
+
+<p>Training accuracy hits near-perfect after roughly 10³ steps. Validation accuracy stays at chance level for a very long time — in the most dramatic cases, close to 10⁶ steps — before suddenly shooting up to perfect generalization. The gap between when the model memorizes and when it generalizes can be three orders of magnitude of extra compute.</p>
+
+<p>They also show that smaller training datasets require exponentially more optimization to generalize. Near the minimum viable data fraction, dropping training data by 1% can increase time to generalization by 40–50%.</p>
+
+<h3>What helps</h3>
+
+<p>They test a bunch of regularization and optimization choices to see what moves the needle. Weight decay is by far the most effective — it more than halves the amount of data needed to generalize compared to most other interventions. Adding noise to training (minibatches, gradient noise, weight noise) also helps, consistent with the idea that stochasticity pushes the optimizer toward flatter minima that generalize better. Learning rate has to be tuned fairly carefully; off by an order of magnitude in either direction and grokking doesn't happen within the training budget.</p>
+
+<h3>Embedding visualizations</h3>
+
+<p>Networks that do generalize learn embeddings that reflect the structure of the underlying math. For modular addition, t-SNE plots of the output layer weights form circular or cylindrical arrangements, reflecting the topology of integers mod p. For S₅ composition, clusters appear that correspond to cosets of a subgroup. These structures are more pronounced in models trained with weight decay — the same models that grok.</p>
+
+<h3>Flat minima</h3>
+
+<p>In a preliminary experiment on S₅, they train multiple networks and measure sharpness of the loss landscape. Networks that grokked tended to land in flatter regions. The Spearman correlation between validation accuracy and sharpness was −0.80 (p &lt; 0.00002). This suggests grokking may require the optimizer to find a flat minimum, and weight decay and noise help push it there.</p>
+
+<h3>Limitations and open questions</h3>
+
+<ul>
+  <li>All experiments are on small synthetic datasets. It's unclear whether the same extreme version of grokking shows up in natural data settings.</li>
+  <li>Some operations never grok at any data fraction. There's no principled way to predict in advance which ones will.</li>
+  <li>The paper documents the phenomenon but doesn't explain the mechanistic transition — what actually changes inside the network when generalization kicks in.</li>
+  <li>Inducing grokking can require vastly more compute than memorization alone, which limits its practical relevance at scale.</li>
+</ul>
+
+<h3>Overall summary</h3>
+
+<p>Grokking shows that generalization and memorization can be cleanly decoupled in the right setting. By training on small algorithmic datasets, the authors get a controlled environment where delayed generalization is reliable and reproducible. Weight decay turns out to be the main driver of making it happen faster. When grokking does occur, the model appears to have genuinely internalized the underlying mathematical structure rather than storing a lookup table — you can see it in the geometry of the embeddings. The setting offers a tractable playground for questions about why overparameterized networks generalize at all.</p>
+
+</body>
+</html>
