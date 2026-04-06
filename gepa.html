@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GEPA — Technical Summary</title>
+<style>
+  body {
+    font-family: Georgia, serif;
+    max-width: 700px;
+    margin: 40px auto;
+    padding: 0 20px;
+    line-height: 1.6;
+    color: #111;
+  }
+  h1 { font-size: 1.6em; margin-bottom: 0.2em; }
+  h3 { margin-top: 1.8em; margin-bottom: 0.3em; }
+  p { margin: 0.8em 0; }
+  a { color: #00e; }
+  ul { margin: 0.5em 0; padding-left: 1.5em; }
+  li { margin-bottom: 0.3em; }
+  .meta { color: #555; font-size: 0.9em; margin-bottom: 1.5em; }
+</style>
+</head>
+<body>
+ 
+<h1>GEPA — Technical Summary</h1>
+<p class="meta">Original paper: <a href="https://arxiv.org/abs/2507.19457">https://arxiv.org/abs/2507.19457</a></p>
+ 
+<p>The paper introduces GEPA (Genetic-Pareto), a prompt optimizer for compound AI systems. The main argument is that reinforcement learning methods like GRPO are unnecessarily expensive for adapting LLMs to new tasks, because they only learn from scalar reward signals. Since LLM outputs are already natural language, the authors argue you can get more out of each rollout by having an LLM read the execution trace and directly reflect on what went wrong — then update the prompt accordingly.</p>
+ 
+<h3>The Problem They're Solving</h3>
+ 
+<p>RL methods like GRPO typically require tens of thousands of rollouts to learn a new task, and recent work has used up to hundreds of thousands. This is slow and expensive, and it requires being able to fine-tune the model weights — which isn't always possible. GEPA is trying to get the same or better performance with far fewer rollouts, by learning in natural language instead of through gradients.</p>
+ 
+<h3>How GEPA Works</h3>
+ 
+<p>GEPA keeps a pool of candidate prompt configurations for a compound AI system (a system with one or more LLM modules). Each iteration, it picks a candidate from the pool, runs it on a small minibatch of training examples, collects the execution traces, and asks an LLM to reflect on the traces and propose an improved prompt for one of the modules. If the new prompt does better on the minibatch, it gets added to the pool.</p>
+ 
+<p>There are two ways to produce a new candidate: (1) mutate a single candidate's prompt using reflective feedback, or (2) merge two candidates by taking the better-evolved module from each.</p>
+ 
+<p>To avoid getting stuck in local optima, GEPA uses a Pareto-based selection strategy instead of always mutating the best-performing candidate. It identifies which candidates are best on at least one training instance (the Pareto frontier), then samples from that set. This keeps the search diverse.</p>
+ 
+<p>One other detail worth noting: they augment the evaluation metric to also return natural language traces — e.g. compiler error messages in code tasks, or per-hop feedback in multi-hop QA. This gives the reflective step more to work with than just a final pass/fail score.</p>
+ 
+<h3>Experiments</h3>
+ 
+<p>They test on four tasks: HotpotQA (multi-hop QA), HoVer (retrieval-augmented fact verification), IFBench (instruction following), and PUPA (privacy-aware task delegation). They use Qwen3 8B and GPT-4.1 Mini as the underlying models.</p>
+ 
+<p>Key results:</p>
+<ul>
+  <li>GEPA outperforms GRPO by 10% on average and up to 19% on individual tasks, while using up to 35x fewer rollouts.</li>
+  <li>GEPA outperforms MIPROv2 (the previous best prompt optimizer) by 14% in aggregate, roughly doubling MIPROv2's gains over baseline.</li>
+  <li>Even a single reflective prompt update often produces a large performance jump.</li>
+</ul>
+ 
+<p>They also show some early results using GEPA as an inference-time search strategy for code optimization (NPUEval and KernelBench), where instead of optimizing prompts across training it iteratively refines a single solution. Results are preliminary but promising.</p>
+ 
+<h3>Limitations</h3>
+ 
+<ul>
+  <li>Works best when the evaluator produces natural language traces — purely black-box scalar rewards reduce the quality of the reflective step.</li>
+  <li>Only optimizes prompts, not weights. If the base model fundamentally can't do the task, prompt optimization won't fix it.</li>
+  <li>Tested on four benchmarks with two models; unclear how well it generalizes to messier real-world tasks.</li>
+  <li>No analysis of how it scales as the number of modules in the system grows.</li>
+</ul>
+ 
+<h3>Overall</h3>
+ 
+<p>The core idea is simple and intuitive: LLMs learn better from language than from scalar rewards, so use language as the learning signal. GEPA operationalizes this through reflective prompt mutation and evolutionary search with Pareto-based diversity. The efficiency gains over GRPO are substantial, and the method works without touching model weights at all, which makes it practical in a wider range of settings. The main open question is how well it holds up outside controlled benchmark settings.</p>
+ 
+</body>
+</html>
