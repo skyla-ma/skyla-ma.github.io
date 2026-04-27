@@ -1,0 +1,120 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Reasoning Traces in Diffusion Models — Technical Summary</title>
+    <style>
+      body { font-family: system-ui, -apple-system, Arial; max-width: 800px; margin: 40px auto; padding: 0 16px; }
+      nav a { margin-right: 12px; }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <a href="/">Home</a>
+      <a href="/about.html">About</a>
+      <a href="/projects.html">Blog</a>
+    </nav>
+
+    <h1>Reasoning Traces in Diffusion Models — Technical Summary</h1>
+
+    <p>
+      Original paper:
+      <a href="https://arxiv.org/pdf/2604.20329" target="_blank">
+        https://arxiv.org/pdf/2604.20329
+      </a>
+    </p>
+
+    <p>
+      The paper studies how to incorporate reasoning-like intermediate structure into diffusion-based image generation. Instead of treating generation as a direct mapping from prompt to image, the idea is to introduce intermediate “reasoning traces” that guide the generation process.
+    </p>
+
+    <h3>Motivation</h3>
+
+    <p>
+      Standard diffusion models learn to denoise from noise to an image conditioned on text. However, this process is largely implicit: the model must internally decide how to decompose a prompt (objects, layout, attributes) without explicit supervision.
+    </p>
+
+    <p>
+      This often leads to failures in compositionality, such as incorrect spatial relationships or missing attributes.
+    </p>
+
+    <h3>Core idea</h3>
+
+    <p>
+      The paper introduces intermediate structured representations (referred to as reasoning traces) that describe aspects of the image before final generation. These can include decompositions of the prompt into objects, attributes, or layouts.
+    </p>
+
+    <p>
+      Instead of:
+    </p>
+
+    <p>
+      text → image
+    </p>
+
+    <p>
+      the model is trained on:
+    </p>
+
+    <p>
+      text → trace → image
+    </p>
+
+    <p>
+      where the trace provides a more structured specification of what should be generated.
+    </p>
+
+    <h3>Method</h3>
+
+    <p>
+      A teacher model (or external system) produces reasoning traces aligned with each text prompt. These traces act as additional conditioning or supervision during training.
+    </p>
+
+    <p>
+      The diffusion model is then trained to generate images conditioned not only on the original text, but also on the intermediate representation.
+    </p>
+
+    <p>
+      In some variants, the model also learns to predict the trace itself, effectively coupling reasoning generation with image synthesis.
+    </p>
+
+    <h3>Why this helps</h3>
+
+    <p>
+      The trace decomposes the generation problem into smaller subproblems (e.g., identifying objects, assigning attributes, arranging them spatially). This reduces the burden on the model to learn these decompositions implicitly.
+    </p>
+
+    <p>
+      As a result, the model can better handle compositional prompts and maintain consistency across different parts of the image.
+    </p>
+
+    <h3>Findings</h3>
+
+    <ul>
+      <li>Models trained with traces show improved compositional generalization.</li>
+      <li>They are better at following complex prompts involving multiple objects and relationships.</li>
+      <li>The approach improves alignment between text descriptions and generated images.</li>
+    </ul>
+
+    <h3>Limitations</h3>
+
+    <ul>
+      <li>Generating high-quality traces requires a strong teacher or additional annotation.</li>
+      <li>The method introduces extra training complexity and compute cost.</li>
+      <li>Performance depends on how well the trace captures relevant structure.</li>
+    </ul>
+
+    <h3>Interpretation</h3>
+
+    <p>
+      The method can be viewed as adding structured intermediate supervision to diffusion models. Instead of learning a single end-to-end mapping, the model is guided through a sequence of latent decisions that resemble a reasoning process.
+    </p>
+
+    <h3>Overall summary</h3>
+
+    <p>
+      Introducing reasoning-like intermediate representations into diffusion training improves compositional image generation by making the generation process more structured and explicit. This leads to better adherence to complex prompts and more controllable outputs.
+    </p>
+
+  </body>
+</html>
