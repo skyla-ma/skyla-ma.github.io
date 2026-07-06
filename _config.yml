@@ -3,5 +3,4 @@ description: Blog & notes
 theme: minima
 
 header_pages:
-  - about.md
   - blog.md
