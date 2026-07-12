@@ -1,43 +1,52 @@
 <!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <title>Blog</title>
-    <style>
-      body { font-family: system-ui, -apple-system, Arial; max-width: 800px; margin: 40px auto; padding: 0 16px; }
-      nav a { margin-right: 12px; }
-    </style>
-  </head>
-  <body>
-    <nav>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Blog — Skyla Ma</title>
+<meta name="description" content="All technical summaries." />
+<link rel="stylesheet" href="/assets/css/style.css" />
+</head>
+<body>
+<div class="wrap">
+ 
+  <header class="hero">
+    <h1>Skyla Ma</h1>
+    <p class="hero-tagline">blog &amp; notes</p>
+    <nav class="site-nav">
       <a href="/">Home</a>
-      <a href="/projects.html">Blog</a>
+      <a href="/projects.html" aria-current="page">Blog</a>
     </nav>
-
-    <h1>Blog</h1>
-
-    <ul>
-      <li>
-        <a href="/scaling-monosemanticity.html">
-          Scaling Monosemanticity — Technical Summary
-        </a>
-      </li>
-      <li>
-        <a href="/grokking.html">
-          Grokking — Technical Summary
-        </a>   
-      </li>
-      <li>
-        <a href="/gepa.html">
-          GEPA — Technical Summary
-        </a>   
-      </li>
-      <li>
-        <a href="/image-learner.html">
-          Diffusion Learner — Technical Summary
-        </a>   
-      </li>
-    </ul>
-
-  </body>
+    <p>Every write-up so far, newest first.</p>
+  </header>
+ 
+  <ul class="post-list">
+    <li class="post-item">
+      <h2><a href="/gepa.html">GEPA — Technical Summary</a></h2>
+      <p>A prompt optimizer for compound AI systems that learns from natural-language reflection on execution traces instead of scalar RL rewards — matching or beating GRPO with up to 35x fewer rollouts.</p>
+      <img class="post-thumb" src="/assets/img/gepa.svg" alt="Pareto frontier of candidate prompts across two tasks, with the frontier traced in green" />
+    </li>
+    <li class="post-item">
+      <h2><a href="/grokking.html">Grokking — Technical Summary</a></h2>
+      <p>Small transformers trained on algorithmic datasets memorize almost instantly, then generalize much later — and weight decay turns out to be the biggest lever for closing that gap.</p>
+      <img class="post-thumb" src="/assets/img/grokking.svg" alt="Training accuracy rising quickly while validation accuracy stays flat, then jumps late — the grokking curve" />
+    </li>
+    <li class="post-item">
+      <h2><a href="/image-learner.html">Reasoning Traces in Diffusion Models — Technical Summary</a></h2>
+      <p>Introducing structured intermediate "reasoning traces" between text and image lets diffusion models decompose prompts explicitly, improving compositional generation.</p>
+      <img class="post-thumb" src="/assets/img/image-learner.svg" alt="Pipeline diagram: text feeds into a reasoning trace, which feeds into the generated image" />
+    </li>
+    <li class="post-item">
+      <h2><a href="/scaling-monosemanticity.html">Scaling Monosemanticity — Technical Summary</a></h2>
+      <p>Sparse autoencoders applied to Claude 3's activations extract millions of interpretable, causally-testable features — showing polysemantic neurons can be decomposed at production scale.</p>
+      <img class="post-thumb" src="/assets/img/scaling-monosemanticity.svg" alt="Grid of feature cells with only a few highlighted as active at once, illustrating sparsity" />
+    </li>
+  </ul>
+ 
+  <footer class="site-footer">
+    &copy; 2026 Skyla Ma
+  </footer>
+ 
+</div>
+</body>
 </html>
