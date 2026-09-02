@@ -269,15 +269,13 @@ article p {
 
 .photo-row figure {
   margin: 0;
-  flex: 1;
-  min-width: 0;
+  flex: 0 0 auto;
 }
 
 .photo-row img {
   display: block;
-  width: 100% !important;
-  height: auto !important;
-  max-width: none !important;
+  width: 90px;
+  height: 65px;
   object-fit: cover;
   border: 1px solid var(--hairline);
   background: #fff;
