@@ -297,12 +297,7 @@ article p {
 }
 
 .photo-row figcaption {
-  margin-top: 6px;
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.04em;
-  text-align: center;
-  color: var(--muted);
+  display: none;
 }
 
 @media (max-width: 750px) {
