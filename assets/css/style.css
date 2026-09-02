@@ -274,8 +274,8 @@ article p {
 
 .photo-row img {
   display: block;
-  width: 90px;
-  height: 65px;
+  width: 104px;
+  height: 75px;
   object-fit: cover;
   border: 1px solid var(--hairline);
   background: #fff;
