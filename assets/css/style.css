@@ -265,6 +265,9 @@ article p {
   gap: 10px;
   margin: 18px 0 24px;
   align-items: flex-start;
+  overflow-x: auto;
+  padding-bottom: 6px;
+
 }
 
 .photo-row figure {
@@ -274,8 +277,8 @@ article p {
 
 .photo-row img {
   display: block;
-  width: 100px !important;
-  height: 72px !important;
+  width: 110px !important;
+  height: 80px !important;
   object-fit: cover;
   border: 1px solid var(--hairline);
   background: #fff;
