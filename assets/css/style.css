@@ -265,22 +265,17 @@ article p {
   gap: 10px;
   margin: 18px 0 24px;
   align-items: flex-start;
-  overflow-x: auto;
-  padding-bottom: 6px;
-
 }
 
 .photo-row figure {
   margin: 0;
-  flex: 0 0 auto;
+  text-align: center;
 }
 
 .photo-row img {
   display: block;
-  width: 100%;
-  max-width: 220px;
-  height: auto;
-  aspect-ratio: 4 / 3;
+  height: 220px;
+  width: auto;
   object-fit: cover;
   border: 1px solid var(--hairline);
   background: #fff;
