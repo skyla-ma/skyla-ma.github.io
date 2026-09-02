@@ -262,6 +262,7 @@ article p {
 .photo-row {
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
   gap: 10px;
   margin: 18px 0 24px;
   align-items: flex-start;
