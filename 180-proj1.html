@@ -22,9 +22,31 @@
     <p>In this project, I use image processing techniques to reconstruct color images from digitized glass plate images to produce a color image. Each glass plate contains three grayscale exposures of the same scene, captured through blue, green, and red filters. To reconstruct the original color image, I separate the plate into its three color channels, align the green and red channels to the blue channel, and stack the aligned channels to produce a single RGB image! </p>
     <p>We are using the digitized Prokudin-Gorskii glass plate images!</p>
 
+    <h3>Before Alignment</h3>
+
+    <p> Simply stacking the three color channels does not produce a clean color image,
+    because the three exposures are slightly shifted relative to one another.
+    The colored outlines in the unaligned image below show this misalignment.
+    The goal of this project is to find the horizontal and vertical shifts that best align the
+    green and red channels with the blue channel. </p>
+
+    <div class="photo-row">
+        <figure>
+            <img src="assets/img_proj1/cathedral_unaligned.jpg">
+            <figcaption>Before alignment</figcaption>
+        </figure>
+    </div>
+
     <h3>Method</h3>
     <p> I first divide each input image vertically into three equal parts. The channels are stored in blue, green, and red order from top to bottom. I use the blue channel as the reference image and find the displacement needed to align the green and red channels with it. </p>
-    <p> To measure the quality of an alignment, I use Normalized Cross-Correlation (NCC). Before computing NCC, I subtract the mean from each image and normalize by the magnitudes of the two images. This makes the metric less dependent on differences in overall brightness between the different color channels. A larger NCC score indicates that the two images are more strongly correlated and therefore more closely aligned. </p>
+    <p> To measure the quality of an alignment, I use Normalized Cross-Correlation (NCC). Before computing NCC, I subtract the mean from each image and normalize by the magnitudes of the two images. This makes the metric less dependent on differences in overall brightness between the different color channels. A larger NCC score indicates that the two images are more strongly correlated and therefore more closely aligned. Here is the NCC formula: </p>
+    <p style="text-align: center;">
+        <strong>
+            NCC(A, B) =
+            Σ[(A - mean(A))(B - mean(B))] /
+            √(Σ(A - mean(A))² Σ(B - mean(B))²)
+        </strong>
+    </p>
     <p> When evaluating an alignment, I only compute NCC over the interior of the images. Shifting an image using <code>np.roll</code> causes pixels that leave one side of the image to wrap around to the opposite side. Ignoring the borders prevents these wrapped pixels and the borders of the original glass plates from significantly affecting the alignment score. </p>
    
     <h3>Single-Scale Version</h3>
@@ -65,11 +87,28 @@
     </div>
 
     <h3>Image Pyramid Version</h3>
-    <p> To efficiently align the larger TIFF images, I implemented a coarse-to-fine image pyramid. The main idea is that a large displacement in a high-resolution image becomes a much smaller displacement when the image is downscaled. This allows me to estimate large translations without performing an expensive exhaustive search over a large window at full resolution. </p>
-    <p> I recursively downscale both the moving and reference channels by a factor of two until the images are sufficiently small. I use anti-aliasing while downscaling so that high-frequency image details do not introduce artifacts into the smaller images. At the coarsest level, I use my original single-scale algorithm to search over a [-15, 15] pixel window. </p>
-    <p> I stop recursively downscaling once the smaller image dimension is below 300 pixels. At the coarsest level, I search ±15 pixels in each direction. At each subsequent pyramid level, I search ±2 pixels around the displacement predicted by the previous level.</p>
-    <p> I then move back through the pyramid toward the original resolution. Because each level is twice the resolution of the previous level, I multiply the displacement found at the coarser level by two. I apply this estimated displacement to the higher-resolution image and perform another small local search around the estimate to correct for errors introduced by downscaling. I repeat this process until reaching the original image resolution. </p>
-    <p> For example, if the algorithm finds a displacement of (6, 3) at a coarse level, the initial estimate at the next level becomes (12, 6). Instead of searching a large region again, the algorithm only searches a small neighborhood around this estimate. This greatly reduces the number of candidate alignments that must be evaluated at high resolution. </p>
+    <p>
+    The high-resolution images need a larger search range, so searching every
+    possible shift at full resolution would be expensive. Instead, I first shrink
+    the images. A shift of 100 pixels in the original image becomes only about
+    12 or 13 pixels after shrinking the image by a factor of 8, making it much
+    easier to find.
+    </p>
+
+    <p>
+    I repeatedly downscale both channels by a factor of two until the smaller
+    image dimension is below 300 pixels. I use anti-aliasing while shrinking the
+    images to avoid introducing artifacts. At this smallest level, I search
+    ±15 pixels in each direction just like in the single-scale algorithm.
+    </p>
+
+    <p>
+    I then work my way back up to the original resolution. Each time the image
+    doubles in size, I also double the shift found at the previous level. Since
+    this gives me a good estimate of the new shift, I only need to search ±2
+    pixels around it to make a small correction. I repeat this until I reach the
+    original image.
+    </p>
     
     
     <h3>Image Pyramid Results!</h3>
@@ -95,7 +134,7 @@
 
 
     <h3>Challenges</h3>
-    <p>My NCC algorithm failed for the church image. The pyramid algorithm did not perfectly align the green channel for this image. Church contains large regions of relatively uniform sky and water, while many of its strongest structural features occupy a smaller portion of the image. Because my alignment metric computes NCC directly on pixel intensities, differences in appearance between the blue and green exposures can cause the coarse pyramid level to select an incorrect displacement. Since subsequent pyramid levels only search a small neighborhood around the coarse estimate, an incorrect coarse alignment can propagate to the final result.</p>
+    <p> My algorithm did not perfectly align the Church image, particularly in the green channel. One reason is that much of the image consists of sky and water, which have relatively little detail for NCC to match. The blue and green exposures can also make the same parts of the scene appear at different brightness levels. As a result, NCC chose a shift that scored well numerically but did not actually line up the church correctly. Because the image pyramid uses the alignment from each smaller level as the starting point for the next level, an incorrect shift early in the pyramid can carry through to the final image. </p>
     <p class="byline"><a href="projects.html">&larr; Back to all summaries</a></p>
   </article>
  
