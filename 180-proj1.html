@@ -18,9 +18,95 @@
     <span class="article-tag">CS 180 • Project 1</span>
     <h1>Project 1 — Images of the Russian Empire</h1>
  
-    <p>placeholder</p>
+    <h3>Background</h3>
+    <p>In this project, I use image processing techniques to reconstruct color images from digitized glass plate images to produce a color image. Each glass plate contains three grayscale exposures of the same scene, captured through blue, green, and red filters. To reconstruct the original color image, I separate the plate into its three color channels, align the green and red channels to the blue channel, and stack the aligned channels to produce a single RGB image! </p>
+    <p>We are using the digitized Prokudin-Gorskii glass plate images!</p>
+
+    <h3>Method</h3>
+    <p> I first divide each input image vertically into three equal parts. The channels are stored in blue, green, and red order from top to bottom. I use the blue channel as the reference image and find the displacement needed to align the green and red channels with it. </p>
+    <p> To measure the quality of an alignment, I use Normalized Cross-Correlation (NCC). Before computing NCC, I subtract the mean from each image and normalize by the magnitudes of the two images. This makes the metric less dependent on differences in overall brightness between the different color channels. A larger NCC score indicates that the two images are more strongly correlated and therefore more closely aligned. </p>
+    <p> When evaluating an alignment, I only compute NCC over the interior of the images. Shifting an image using <code>np.roll</code> causes pixels that leave one side of the image to wrap around to the opposite side. Ignoring the borders prevents these wrapped pixels and the borders of the original glass plates from significantly affecting the alignment score. </p>
+   
+    <h3>Single-Scale Version</h3>
+    <p> I first implemented a single-scale exhaustive search algorithm for the smaller JPEG images. For each channel that needs to be aligned, I search over every horizontal and vertical displacement in the range [-15, 15] pixels. For each candidate displacement, I shift the channel using <code>np.roll</code> and compute its NCC score with the blue reference channel. The displacement with the highest NCC score is selected as the final alignment. </p>
+    <p> This approach works well for the smaller images because their displacements are relatively small and the images contain relatively few pixels. However, it becomes inefficient for the high-resolution TIFF images. Larger images can require displacements much greater than 15 pixels, and exhaustively searching a sufficiently large window at full resolution would require evaluating many possible shifts over millions of pixels. </p>
+    
+    <h3>Single-Scale Results!</h3>
+    <div class="photo-row photo-row--3" aria-label="Focal length progression for the building study">
+      <figure><img src="assets/img_proj1/cathedral_single_aligned.jpg"/><figcaption>cathedral Green channel shift: (5, 2)
+Red channel shift:  (12, 3)
+Time taken for pyramid alignment:  0.0 seconds</figcaption></figure>
+      <figure><img src="assets/img_proj1/monastery_single_aligned.jpg"/><figcaption>monastery Green channel shift: (-3, 2)
+Red channel shift:  (3, 2)
+Time taken for pyramid alignment:  1.19e-06 seconds</figcaption></figure>
+      <figure><img src="assets/img_proj1/tobolsk_single_aligned.jpg" /><figcaption>tobolsk Green channel shift:  (3, 2)
+Red channel shift:  (6, 3)
+Time taken for pyramid alignment:  9.54e-07 seconds</figcaption></figure>
+    </div>
+    <div class="photo-row photo-row--3" aria-label="Single-scale alignment results">
+        <figure>
+            <img src="assets/img_proj1/cathedral_single_aligned.jpg" alt="Single-scale alignment result for Cathedral" />
+            <figcaption>
+            <strong>Cathedral</strong><br>
+            Green shift: (5, 2)<br>
+            Red shift: (12, 3)
+            Time: 0.49 seconds
+            </figcaption>
+        </figure>
+
+        <figure>
+            <img src="assets/img_proj1/monastery_single_aligned.jpg" alt="Single-scale alignment result for Monastery" />
+            <figcaption>
+            <strong>Monastery</strong><br>
+            Green shift: (-3, 2)<br>
+            Red shift: (3, 2)
+            Time: 0.47 seconds
+            </figcaption>
+        </figure>
+
+        <figure>
+            <img src="assets/img_proj1/tobolsk_single_aligned.jpg" alt="Single-scale alignment result for Tobolsk" />
+            <figcaption>
+            <strong>Tobolsk</strong><br>
+            Green shift: (3, 2)<br>
+            Red shift: (6, 3)
+            Time: 0.48 seconds
+            </figcaption>
+        </figure>
+    </div>
+
+    <h3>Image Pyramid Version</h3>
+    <p> To efficiently align the larger TIFF images, I implemented a coarse-to-fine image pyramid. The main idea is that a large displacement in a high-resolution image becomes a much smaller displacement when the image is downscaled. This allows me to estimate large translations without performing an expensive exhaustive search over a large window at full resolution. </p>
+    <p> I recursively downscale both the moving and reference channels by a factor of two until the images are sufficiently small. I use anti-aliasing while downscaling so that high-frequency image details do not introduce artifacts into the smaller images. At the coarsest level, I use my original single-scale algorithm to search over a [-15, 15] pixel window. </p>
+    <p> I stop recursively downscaling once the smaller image dimension is below 300 pixels. At the coarsest level, I search ±15 pixels in each direction. At each subsequent pyramid level, I search ±2 pixels around the displacement predicted by the previous level.</p>
+    <p> I then move back through the pyramid toward the original resolution. Because each level is twice the resolution of the previous level, I multiply the displacement found at the coarser level by two. I apply this estimated displacement to the higher-resolution image and perform another small local search around the estimate to correct for errors introduced by downscaling. I repeat this process until reaching the original image resolution. </p>
+    <p> For example, if the algorithm finds a displacement of (6, 3) at a coarse level, the initial estimate at the next level becomes (12, 6). Instead of searching a large region again, the algorithm only searches a small neighborhood around this estimate. This greatly reduces the number of candidate alignments that must be evaluated at high resolution. </p>
+    
+    
+    <h3>Image Pyramid Results!</h3>
+    <div class="result"> <img src="assets/img_proj1/cathedral_aligned.jpg"> <p><strong>Cathedral</strong></p> <p>Green offset: (5, 2)</p> <p>Red offset: (12, 3)</p> Time: 0.19 seconds</div>
+    <div class="result"> <img src="assets/img_proj1/church_aligned.jpg"> <p><strong>Church</strong></p> <p>Green offset: (2, -5)</p> <p>Red offset: (55, -13)</p> Time: 2.30 seconds</div>
+    <div class="result"> <img src="assets/img_proj1/emir_aligned.jpg"> <p><strong>Emir</strong></p> <p>Green offset: (48, 22)</p> <p>Red offset: (105, 42)</p> Time: 2.27 seconds</div>
+    <div class="result"> <img src="assets/img_proj1/harvesters_aligned.jpg"> <p><strong>Harvesters</strong></p> <p>Green offset: (58, 10)</p> <p>Red offset: (126, 13)</p> Time: 2.23 seconds</div>
+    <div class="result"> <img src="assets/img_proj1/icon_aligned.jpg"> <p><strong>Icon</strong></p> <p>Green offset: (40, 16)</p> <p>Red offset: (90, 23)</p> Time: 2.34 seconds</div> 
+    <div class="result"> <img src="assets/img_proj1/ilemselga_aligned.jpg"> <p><strong>Ilemselga</strong></p> <p>Green offset: (39, -4)</p> <p>Red offset: (130, 9)</p> Time: 2.40 seconds</div>
+    <div class="result"> <img src="assets/img_proj1/melons_aligned.jpg"> <p><strong>Melons</strong></p> <p>Green offset: (82, 4)</p> <p>Red offset: (179, 12)</p> Time: 2.25 seconds</div>
+    <div class="result"> <img src="assets/img_proj1/monastery_aligned.jpg"> <p><strong>Monastery</strong></p> <p>Green offset: (-3, 2)</p> <p>Red offset: (3, 2)</p> Time: 0.17 seconds</div>
+    <div class="result"> <img src="assets/img_proj1/religous_painting_aligned.jpg"> <p><strong>Religous Painting</strong></p> <p>Green offset: (25, 3)</p> <p>Red offset: (68, 7)</p> Time: 2.40 seconds</div>
+    <div class="result"> <img src="assets/img_proj1/self_portrait_aligned.jpg"> <p><strong>Self Portrait</strong></p> <p>Green offset: (78, 24)</p> <p>Red offset: (176, 34)</p> Time: 2.34 seconds</div>
+    <div class="result"> <img src="assets/img_proj1/siren_aligned.jpg"> <p><strong>Siren</strong></p> <p>Green offset: (48, -7)</p> <p>Red offset: (97, -23)</p> Time: 2.46 seconds</div>
+    <div class="result"> <img src="assets/img_proj1/three_generations_aligned.jpg"> <p><strong>Three Generations</strong></p> <p>Green offset: (52, 5)</p> <p>Red offset: (111, 9)</p> Time: 2.32 seconds</div>
+    <div class="result"> <img src="assets/img_proj1/tobolsk_aligned.jpg"> <p><strong>Tobolsk</strong></p> <p>Green offset: (3, 2)</p> <p>Red offset: (6, 3)</p> Time: 0.17 seconds</div>
+    <div class="result"> <img src="assets/img_proj1/wharf_aligned.jpg"> <p><strong>Wharf</strong></p> <p>Green offset: (15, -7)</p> <p>Red offset: (83, -18)</p> Time: 2.44 seconds</div>
+
+    <h3>Additional Images</h3>
+    <div class="result"> <img src="assets/img_proj1/peony_aligned.jpg"> <p><strong>Peony</strong></p> <p>Green offset: (51, 1)</p> <p>Red offset: (104, -7)</p> Time: 2.35 seconds</div>
+    <div class="result"> <img src="assets/img_proj1/isfandiyar_aligned.jpg"> <p><strong>Isfandiyar</strong></p> <p>Green offset: (41, -7)</p> <p>Red offset: (105, 0)</p> Time: 2.28 seconds</div>
+    <div class="result"> <img src="assets/img_proj1/milan_aligned.jpg"> <p><strong>Milan</strong></p> <p>Green offset: (56, 11)</p> <p>Red offset: (125, 24)</p> Time: 2.33 seconds</div>
 
 
+    <h3>Challenges</h3>
+    <p>My NCC algorithm failed for the church image. The pyramid algorithm did not perfectly align the green channel for this image. Church contains large regions of relatively uniform sky and water, while many of its strongest structural features occupy a smaller portion of the image. Because my alignment metric computes NCC directly on pixel intensities, differences in appearance between the blue and green exposures can cause the coarse pyramid level to select an incorrect displacement. Since subsequent pyramid levels only search a small neighborhood around the coarse estimate, an incorrect coarse alignment can propagate to the final result.</p>
     <p class="byline"><a href="projects.html">&larr; Back to all summaries</a></p>
   </article>
  
