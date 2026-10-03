@@ -71,19 +71,63 @@
       </tr>
     </table>
     <p>From the runtime results, we can see that the four-loop convolution is very significantly the slowest implementation. This is followed by the two-loop convolution, and the SciPy implementation is the fastest.</p>
+    <p>The four-loop version performs every multiplication and addition inside Python loops. The two-loop version reduces this overhead by performing operations on entire image patches using NumPy, while SciPy uses an optimized compiled implementation.</p>
+    <p>I verified my two-loop implementation against <code>scipy.signal.convolve2d</code>. The maximum absolute difference was approximately \(1.67 \times 10^{-15}\), and <code>np.allclose</code> returned <code>True</code>. Both implementations use zero padding, equivalent to SciPy's <code>boundary="fill", fillvalue=0</code>. This differs from symmetric padding, which reflects image values at the boundaries.</p>
     <p>Below are the implementation details:</p>
+    <pre><code>
+        def conv_four_loops(img, kernel):
+            H, W = img.shape
+            Kh, Kw = kernel.shape
+            kernel = np.flip(kernel, axis=(0, 1))
+            pad_h = Kh // 2
+            pad_w = Kw // 2
+            padded = np.pad(
+                img, ((pad_h, pad_h), (pad_w, pad_w)),
+                mode='constant'
+            )
+            output = np.zeros_like(img, dtype=np.float64)
+
+            for i in range(H):
+                for j in range(W):
+                    for m in range(Kh):
+                        for n in range(Kw):
+                            output[i, j] += (
+                                padded[i + m, j + n] * kernel[m, n]
+                            )
+            return output
+
+
+        def conv_two_loops(img, kernel):
+            H, W = img.shape
+            Kh, Kw = kernel.shape
+            kernel = np.flip(kernel, axis=(0, 1))
+            pad_h = Kh // 2
+            pad_w = Kw // 2
+            padded = np.pad(
+                img, ((pad_h, pad_h), (pad_w, pad_w)),
+                mode='constant'
+            )
+            output = np.zeros_like(img, dtype=np.float64)
+
+            for i in range(H):
+                for j in range(W):
+                    region = padded[i:i+Kh, j:j+Kw]
+                    output[i, j] = np.sum(region * kernel)
+            return output
+    </code></pre>
 
     <h3>Part 1.2: Finite Difference Operator</h3>
     <p>I applied the horizontal and vertical finite-difference operators to the cameraman image and combined their responses using the gradient magnitude. This detects intensity changes regardless of edge orientation.</p>
         \[
         D_x =
         \begin{bmatrix}
-        1 & -1
+        1 & 0 & -1
         \end{bmatrix},
         \qquad
         D_y =
         \begin{bmatrix}
         1\\
+        0\\
         -1
         \end{bmatrix}
         \]
@@ -120,7 +164,7 @@
         Binary edge maps at different thresholds.
       </figcaption>
     </figure>
-    <p>A threshold of 0.15 works well for this image, as it preserves the main edges while removing most noise.</p>
+    <p>I compared thresholds of 0.05, 0.10, 0.15, and 0.20. At lower thresholds, the edge map includes weaker intensity variations, including texture in the background. I selected 0.15 to prioritize the more prominent boundaries, such as the cameraman's silhouette and the outlines of the surrounding structures, rather than preserving every small intensity change.</p>
     
     <h3>Part 1.3: Derivative of Gaussian Filter</h3>
     <p>The original finite-difference results contained noise because derivatives respond to small intensity changes. To reduce this, I smoothed the cameraman image with a Gaussian filter before calculating its derivatives.</p>
@@ -175,10 +219,7 @@
       </figcaption>
     </figure>
     <p>By the associativity of convolution, applying these combined filters should produce approximately the same results as smoothing and differentiating separately, provided the boundary handling is consistent.</p>
-    <p>
-    [INSERT YOUR NUMERICAL COMPARISON AND DESCRIBE
-    HOW THE SMOOTHED EDGE MAP DIFFERS FROM PART 1.2.]
-    </p>
+    <p>I compared the derivative-of-Gaussian results against smoothing followed by differentiation. The maximum absolute difference in the interior was [INSERT MEASURED VALUE]. The two approaches produce nearly identical results away from the image boundaries, consistent with the associativity of convolution.</p>
 
     <h3>Part 2.1: Image "Sharpening"</h3>
     <p>I implemented unsharp masking by subtracting a Gaussian-blurred image from the original to isolate high-frequency details. Adding a scaled version of these details back to the original increases local contrast around edges.</p>
@@ -188,6 +229,7 @@
         -\alpha G_\sigma\right]*I
         \]
     <p>Here, \(\delta\) is the identity filter and \(\alpha\) controls the sharpening strength. I experimented with different values of \(\alpha\) to examine how increasing high-frequency contrast changes the image.</p>
+    <p>I used a 9 x 9 Gaussian kernel with \(\sigma = 2\) and compared sharpening strengths of \(\alpha = 0, 0.5, 1, 2, 4\). At \(\alpha = 0\), the image remains unchanged. Increasing \(\alpha\) emphasizes architectural edges and fine details, but also increases the risk of exaggerated contrast around high-contrast boundaries.</p>
     <figure>
       <img src="assets/img_proj2/taj_sharpening.png"
            alt="Taj Mahal sharpening" width="100%" />
@@ -220,7 +262,7 @@
         and sharpened reconstruction.
       </figcaption>
     </figure>
-    <p>Although sharpening increased the apparent definition of the blurred image, it could not fully restore the original details, such as the people at the entrance of the temple.</p>
+    <p>Although sharpening increased the apparent definition of the blurred image, it could not fully restore the original details, such as the people at the entrance of the temple. Blurring suppresses high-frequency information, and unsharp masking can only amplify the information that remains. It cannot reconstruct details that were effectively removed.</p>
     
     <h3>Part 2.2: Hybrid Images</h3>
     <p>Hybrid images combine the low frequencies of one photograph with the high frequencies of another. The high-frequency subject is more apparent up close, while the low-frequency subject becomes dominant at greater viewing distances.</p>
@@ -240,6 +282,33 @@
         components, and final hybrid.
       </figcaption>
     </figure>
+    <p>For Derek and Nutmeg, I used a Gaussian kernel size of 41, with \(\sigma_L = 8\) for Derek and \(\sigma_H = 5\) for Nutmeg. I also tested the parameter pairs (2, 2), (4, 2), (5, 3), (7, 4), and (10, 5) to examine how the relative strength of the two frequency components affects the hybrid.</p>
+    <figure>
+        <img
+            src="assets/img_proj2/hybrid_cutoffs.png"
+            alt="Hybrid cutoff parameter experiments"
+            width="100%"
+        />
+        <figcaption>
+            Derek and Nutmeg hybrids generated with
+            different Gaussian standard deviations
+            for the low-pass and high-pass components.
+        </figcaption>
+    </figure>
+    <p>I also examined the log-magnitude Fourier transforms of both aligned input images, the low-pass Derek image, the high-pass Nutmeg image, and the final hybrid. Low-pass filtering concentrates the retained frequency information near the center of the spectrum, while high-pass filtering suppresses much of that central region. The final hybrid contains contributions from both frequency bands.</p>
+    <figure>
+        <img
+            src="assets/img_proj2/hybrid_fourier.png"
+            alt="Hybrid images and Fourier spectra"
+            width="100%"
+        />
+        <figcaption>
+            Aligned Derek and Nutmeg, their filtered
+            components, and the final hybrid,
+            together with their log-magnitude
+            Fourier spectra.
+        </figcaption>
+    </figure>
 
     <p>For my second hybrid, I paired a mushroom cloud with a jellyfish because their rounded silhouettes have similar overall shapes. I combined the low-frequency mushroom cloud with the high-frequency jellyfish.</p>
     <figure>
@@ -247,8 +316,10 @@
            alt="Jellyfish and mushroom cloud hybrid"
            width="100%" />
       <figcaption>
-        Original photographs and final hybrid.
-        Cutoff frequencies: [VALUES].
+        Mushroom cloud and jellyfish hybrid.
+        The mushroom cloud contributes the low-frequency component with
+        \(\sigma_L = 8\), while the jellyfish contributes the high-frequency component
+        with \(\sigma_H = 5\).
       </figcaption>
     </figure>
 
@@ -269,6 +340,7 @@
        I = \sum_{i=0}^{N}L_i
        \]
     <p>Unlike image pyramids, my stacks preserve the original image dimensions at every level. This allows corresponding pixels from different frequency bands to be blended directly.</p>
+    <p>I constructed the apple and orange stacks using five filtering iterations with \(\sigma = 4\), producing six levels per stack. To make the Laplacian details easier to see, I multiplied the non-residual Laplacian levels by three and added 0.5 for display. These adjustments were only used for visualization, not reconstruction.</p>
     <figure>
       <img src="assets/img_proj2/apple_stacks.png"
            alt="Gaussian stacks" width="100%" />
@@ -302,7 +374,7 @@
         \]
     <p>Because the mask becomes smoother at coarser levels, low-frequency features transition more gradually while high-frequency details can transition over a narrower region.</p>
     <figure>
-      <img src="images/oraple.png"
+      <img src="assets/img_proj2/oraple.png"
            alt="Apple-orange blend" width="100%" />
       <figcaption>
         Original photographs, vertical mask,
@@ -310,7 +382,7 @@
       </figcaption>
     </figure>
     <figure>
-      <img src="images/oraple_breakdown.png"
+      <img src="assets/img_proj2/oraple_breakdown.png"
            alt="Oraple blending decomposition"
            width="100%" />
       <figcaption>
@@ -319,13 +391,9 @@
         the summed contributions and final blend.
       </figcaption>
     </figure>
-    <p>
-      I applied the same technique to a fruit tree and cherry blossom tree using a straight vertical mask.
-      [DESCRIBE THE RESULT AND WHETHER
-      THE SEAM REMAINS VISIBLE.]
-    </p>
+    <p>I blended a fruit tree with a cherry blossom tree using a vertical mask. Unlike the Oraple, these photographs contain irregular natural textures, including branches, foliage, and blossoms. Multiresolution blending softens the transition between the two photographs, although differences in color and scene structure can still make the boundary noticeable.</p>
     <figure>
-      <img src="images/custom_vertical.png"
+      <img src="assets/img_proj2/custom_vertical.png"
            alt="Custom vertical blend" width="100%" />
       <figcaption>
         Input photographs, vertical mask,
@@ -335,7 +403,7 @@
 
     <p>For my irregular-mask experiment, I replaced the view through a doorway with another landscape. I created a mask following the doorway's opening so the surrounding architecture would remain intact while the interior was blended with the replacement scene.</p>
     <figure>
-      <img src="images/doorway_blend.png"
+      <img src="assets/img_proj2/doorway_blend.png"
            alt="Doorway irregular-mask blend" width="100%" />
       <figcaption>
         Original doorway, replacement landscape,
@@ -344,6 +412,8 @@
     </figure>
 
     <h3>Challenges</h3>
+    <p>The most challenging part of this project was choosing parameters that preserved the information I wanted without introducing unwanted visual effects. In edge detection, stronger smoothing reduced noise but also removed weaker details. For hybrid images, alignment and cutoff frequencies determined whether both subjects remained recognizable at different viewing distances.</p>
+    <p>My biggest takeaway was that different spatial frequencies contribute to an image in very different ways. High frequencies capture fine details and sharp boundaries, while low frequencies preserve broader shapes and structure. Multiresolution blending brought these ideas together by allowing images to transition differently at each scale, rather than relying on a single blending boundary.</p>
 
     <p class="byline"><a href="projects.html">&larr; Back to all summaries</a></p>
   </article>
