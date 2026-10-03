@@ -219,7 +219,7 @@
       </figcaption>
     </figure>
     <p>By the associativity of convolution, applying these combined filters should produce approximately the same results as smoothing and differentiating separately, provided the boundary handling is consistent.</p>
-    <p>I compared the derivative-of-Gaussian results against smoothing followed by differentiation. The maximum absolute difference in the interior was 0.14 for Dx and 0.12 for Dy. The two approaches produce nearly identical results away from the image boundaries, consistent with the associativity of convolution.</p>
+    <p>I compared the derivative-of-Gaussian results against smoothing followed by differentiation. The maximum absolute difference in the interior was 1.12e-15 for Dx and 1.17e-15 for Dy. The two approaches produce nearly identical results away from the image boundaries, consistent with the associativity of convolution.</p>
 
     <h3>Part 2.1: Image "Sharpening"</h3>
     <p>I implemented unsharp masking by subtracting a Gaussian-blurred image from the original to isolate high-frequency details. Adding a scaled version of these details back to the original increases local contrast around edges.</p>
@@ -228,7 +228,7 @@
         \left[(1+\alpha)\delta
         -\alpha G_\sigma\right]*I
         \]
-    <p>Here, \(\delta\) is the identity filter and \(\alpha\) controls the sharpening strength. I experimented with different values of \(\alpha\) to examine how increasing high-frequency contrast changes the image.</p>
+    <p>Here, \(\delta\) is the identity filter and \(\alpha\) controls the sharpening strength.</p>
     <p>I used a 9 x 9 Gaussian kernel with \(\sigma = 2\) and compared sharpening strengths of \(\alpha = 0, 0.5, 1, 2, 4\). At \(\alpha = 0\), the image remains unchanged. Increasing \(\alpha\) emphasizes architectural edges and fine details, but also increases the risk of exaggerated contrast around high-contrast boundaries.</p>
     <figure>
       <img src="assets/img_proj2/taj_sharpening.png"
@@ -272,7 +272,6 @@
         \left(I_B-G_{\sigma_H}*I_B\right)
         \]
     <p>The Gaussian filter with standard deviation \(\sigma_L\) extracts the low frequencies of the first image. Subtracting a Gaussian-blurred version of the second image isolates its high frequencies.</p>
-    <p>At close range, the high-frequency details are easier to distinguish. As the image becomes smaller, these details become less perceptible, allowing the low-frequency subject to dominate.</p>
     <p>I aligned Derek and Nutmeg using corresponding facial features, then combined low-frequency Derek with high-frequency Nutmeg. Alignment was important because mismatched features made the two subjects compete rather than form a convincing hybrid.</p>
     <figure>
       <img src="assets/img_proj2/derek_nutmeg_process.png"
@@ -322,6 +321,18 @@
         with \(\sigma_H = 5\).
       </figcaption>
     </figure>
+    <p>For my third hybrid, I paired a koala with an owl because their round heads are similar to each other, and I was able to align the eyes. I combined the low-frequency koala with the high-frequency owl.</p>
+    <figure>
+      <img src="assets/img_proj2/koala_owl.png"
+           alt="Koala and owl hybrid"
+           width="100%" />
+      <figcaption>
+        Koala and owl hybrid.
+        The koala contributes the low-frequency component with
+        \(\sigma_L = 3\), while the owl contributes the high-frequency component
+        with \(\sigma_H = 3\).
+      </figcaption>
+    </figure>
 
     <h3>Part 2.3: Gaussian and Laplacian Stacks</h3>
     <p>I implemented Gaussian and Laplacian stacks to decompose images across multiple spatial scales. Each Gaussian level is progressively smoother, while each Laplacian level captures the details removed between successive Gaussian levels. Unlike pyramids, these stacks preserve the original image dimensions.</p>
@@ -355,7 +366,6 @@
         Gaussian and Laplacian stacks of the orange.
       </figcaption>
     </figure>
-    <p>The Gaussian stacks preserve the overall shapes as fine details disappear. The Laplacian stacks isolate those details at different scales. Summing all Laplacian levels, including the final low-frequency residual, reconstructs the original image.</p>
     
     <h3>Part 2.4: Multiresolution Blending (The Oraple!)</h3>
     <p>I implemented multiresolution blending using Laplacian stacks for the input photographs and a Gaussian stack for the mask. At each level, the blurred mask determines the contribution from each image. Summing the blended levels produces the final result.</p>
