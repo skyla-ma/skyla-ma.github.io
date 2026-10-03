@@ -84,14 +84,127 @@
       </figcaption>
     </figure>
     <p>I experimented with different thresholds to produce a binary edge image. Lower thresholds preserved more weak edges but also introduced additional noise. Increasing the threshold removed noise at the expense of some weaker boundaries.</p>
-    
+    <figure>
+      <img src="assets/img_proj2/finite_difference_thresholds.png"
+           alt="Edge threshold comparison" width="100%" />
+      <figcaption>
+        Binary edge maps at different thresholds.
+      </figcaption>
+    </figure>
+    <p>A threshold of 0.15 works well for this image, as it preserves the main edges while removing most noise.</p>
+    <figure>
+      <img src="assets/img_proj2/gaussian_first.png"
+           alt="Gaussian-first edge detection" width="100%" />
+      <figcaption>
+        Gaussian-smoothed image, derivatives, and
+        gradient magnitude.
+      </figcaption>
+    </figure>
+    <figure>
+      <img src="assets/img_proj2/gaussian_thresholds.png"
+           alt="Gaussian-smoothed edge maps" width="100%" />
+      <figcaption>
+        Threshold comparison after Gaussian smoothing.
+      </figcaption>
+    </figure>
+    <p>I also constructed derivative-of-Gaussian filters by convolving the Gaussian kernel with the finite-difference operators. This combines smoothing and differentiation into a single convolution.</p>
+    <figure>
+      <img src="assets/img_proj2/dog_filters.png"
+           alt="Derivative-of-Gaussian filters" width="100%" />
+      <figcaption>
+        Horizontal and vertical derivative-of-Gaussian filters.
+      </figcaption>
+    </figure>
+    <figure>
+      <img src="assets/img_proj2/dog_results.png"
+           alt="DoG edge detection results" width="100%" />
+      <figcaption>
+        DoG derivatives, gradient magnitude, and binary edge map.
+      </figcaption>
+    </figure>
+
     <h3>Part 1.3: Derivative of Gaussian Filter</h3>
     <p>The original finite-difference results contained noise because derivatives respond to small intensity changes. To reduce this, I smoothed the cameraman image with a Gaussian filter before calculating its derivatives.</p>
 
     <h3>Part 2.1: Image "Sharpening"</h3>
+    <p>I implemented unsharp masking by subtracting a Gaussian-blurred image from the original to isolate high-frequency details. Adding a scaled version of these details back to the original increases local contrast around edges.</p>
+    <figure>
+      <img src="assets/img_proj2/taj_sharpening.png"
+           alt="Taj Mahal sharpening" width="100%" />
+      <figcaption>
+        Original Taj Mahal, blurred image,
+        high-frequency component, and sharpened result.
+      </figcaption>
+    </figure>
+    <p>I experimented with different sharpening strengths. Increasing the strength made architectural details more pronounced, although excessive sharpening can exaggerate noise and create halos.</p>
+    <figure>
+      <img src="assets/img_proj2/taj_alpha.png"
+           alt="Sharpening strength comparison" width="100%" />
+      <figcaption>
+        Taj Mahal sharpened using different strengths.
+      </figcaption>
+    </figure>
+    <p>I repeated the experiment with a photo of the Lotus Temple and tested whether sharpening could recover an artificially blurred image.</p>
+    <figure>
+      <img src="assets/img_proj2/lotus_sharpening.png"
+           alt="Lotus sharpening" width="100%" />
+      <figcaption>
+        Original Lotus Temple and sharpened result.
+      </figcaption>
+    </figure>
+    <figure>
+      <img src="assets/img_proj2/blur_then_sharpen.png"
+           alt="Blur-then-sharpen experiment" width="100%" />
+      <figcaption>
+        Original photograph, artificially blurred image,
+        and sharpened reconstruction.
+      </figcaption>
+    </figure>
+    <p>Although sharpening increased the apparent definition of the blurred image, it could not fully restore the original details, such as the people at the entrance of the temple.</p>
+    
     <h3>Part 2.2: Hybrid Images</h3>
+    <p>Hybrid images combine the low frequencies of one photograph with the high frequencies of another. The high-frequency subject is more apparent up close, while the low-frequency subject becomes dominant at greater viewing distances.</p>
+    <p>I aligned Derek and Nutmeg using corresponding facial features, then combined low-frequency Derek with high-frequency Nutmeg. Alignment was important because mismatched features made the two subjects compete rather than form a convincing hybrid.</p>
+    <figure>
+      <img src="assets/img_proj2/derek_nutmeg_process.png"
+           alt="Derek and Nutmeg hybrid process" width="100%" />
+      <figcaption>
+        Original and aligned photographs, filtered
+        components, and final hybrid.
+      </figcaption>
+    </figure>
+
+    <p>For my second hybrid, I paired a mushroom cloud with a jellyfish because their rounded silhouettes have similar overall shapes. I combined the low-frequency mushroom cloud with the high-frequency jellyfish.</p>
+    <figure>
+      <img src="assets/img_proj2/jellyfish_cloud.png"
+           alt="Jellyfish and mushroom cloud hybrid"
+           width="100%" />
+      <figcaption>
+        Original photographs and final hybrid.
+        Cutoff frequencies: [VALUES].
+      </figcaption>
+    </figure>
+
     <h3>Part 2.3: Gaussian and Laplacian Stacks</h3>
+    <p>I implemented Gaussian and Laplacian stacks to decompose images across multiple spatial scales. Each Gaussian level is progressively smoother, while each Laplacian level captures the details removed between successive Gaussian levels. Unlike pyramids, these stacks preserve the original image dimensions.</p>
+    <figure>
+      <img src="assets/img_proj2/apple_stacks.png"
+           alt="Gaussian stacks" width="100%" />
+      <figcaption>
+        Gaussian and Laplacian stacks of the apple.
+      </figcaption>
+    </figure>
+    <figure>
+      <img src="assets/img_proj2/orange_stacks.png"
+           alt="Laplacian stacks" width="100%" />
+      <figcaption>
+        Gaussian and Laplacian stacks of the orange.
+      </figcaption>
+    </figure>
+    <p>The Gaussian stacks preserve the overall shapes as fine details disappear. The Laplacian stacks isolate those details at different scales. Summing all Laplacian levels, including the final low-frequency residual, reconstructs the original image.</p>
+    
     <h3>Part 2.4: Multiresolution Blending (The Oraple!)</h3>
+    <p>I implemented multiresolution blending using Laplacian stacks for the input photographs and a Gaussian stack for the mask. At each level, the blurred mask determines the contribution from each image. Summing the blended levels produces the final result.</p>
 
     <h3>Challenges</h3>
 
