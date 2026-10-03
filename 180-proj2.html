@@ -75,6 +75,35 @@
 
     <h3>Part 1.2: Finite Difference Operator</h3>
     <p>I applied the horizontal and vertical finite-difference operators to the cameraman image and combined their responses using the gradient magnitude. This detects intensity changes regardless of edge orientation.</p>
+        \[
+        D_x =
+        \begin{bmatrix}
+        1 & -1
+        \end{bmatrix},
+        \qquad
+        D_y =
+        \begin{bmatrix}
+        1\\
+        -1
+        \end{bmatrix}
+        \]
+    <p>I convolved the image with each operator and combined the resulting derivatives using the gradient magnitude:</p>
+        \[
+        G(x,y) =
+        \sqrt{
+        (I * D_x)^2(x,y) +
+        (I * D_y)^2(x,y)
+        }
+        \]
+    <p>To obtain a binary edge map, I thresholded the gradient magnitude:</p>
+        \[
+        E(x,y) =
+        \begin{cases}
+        1 & G(x,y) > T\\
+        0 & \text{otherwise}
+        \end{cases}
+        \]
+
     <figure>
       <img src="assets/img_proj2/finite_difference.png"
            alt="Finite difference results" width="100%" />
@@ -92,6 +121,24 @@
       </figcaption>
     </figure>
     <p>A threshold of 0.15 works well for this image, as it preserves the main edges while removing most noise.</p>
+    
+    <h3>Part 1.3: Derivative of Gaussian Filter</h3>
+    <p>The original finite-difference results contained noise because derivatives respond to small intensity changes. To reduce this, I smoothed the cameraman image with a Gaussian filter before calculating its derivatives.</p>
+        \[
+        G_\sigma(x,y) =
+        \frac{1}{2\pi\sigma^2}
+        \exp\left(
+        -\frac{x^2+y^2}{2\sigma^2}
+        \right)
+        \]
+    <p>I first convolved the cameraman image with the Gaussian and then applied the finite-difference operators:</p>
+        \[
+        I_x = (I * G_\sigma) * D_x
+        \]
+
+        \[
+        I_y = (I * G_\sigma) * D_y
+        \]
     <figure>
       <img src="assets/img_proj2/gaussian_first.png"
            alt="Gaussian-first edge detection" width="100%" />
@@ -108,6 +155,11 @@
       </figcaption>
     </figure>
     <p>I also constructed derivative-of-Gaussian filters by convolving the Gaussian kernel with the finite-difference operators. This combines smoothing and differentiation into a single convolution.</p>
+        \[
+        DoG_x = G_\sigma * D_x,
+        \qquad
+        DoG_y = G_\sigma * D_y
+        \]
     <figure>
       <img src="assets/img_proj2/dog_filters.png"
            alt="Derivative-of-Gaussian filters" width="100%" />
@@ -122,12 +174,20 @@
         DoG derivatives, gradient magnitude, and binary edge map.
       </figcaption>
     </figure>
-
-    <h3>Part 1.3: Derivative of Gaussian Filter</h3>
-    <p>The original finite-difference results contained noise because derivatives respond to small intensity changes. To reduce this, I smoothed the cameraman image with a Gaussian filter before calculating its derivatives.</p>
+    <p>By the associativity of convolution, applying these combined filters should produce approximately the same results as smoothing and differentiating separately, provided the boundary handling is consistent.</p>
+    <p>
+    [INSERT YOUR NUMERICAL COMPARISON AND DESCRIBE
+    HOW THE SMOOTHED EDGE MAP DIFFERS FROM PART 1.2.]
+    </p>
 
     <h3>Part 2.1: Image "Sharpening"</h3>
     <p>I implemented unsharp masking by subtracting a Gaussian-blurred image from the original to isolate high-frequency details. Adding a scaled version of these details back to the original increases local contrast around edges.</p>
+        \[
+        I_{\text{sharp}} =
+        \left[(1+\alpha)\delta
+        -\alpha G_\sigma\right]*I
+        \]
+    <p>Here, \(\delta\) is the identity filter and \(\alpha\) controls the sharpening strength. I experimented with different values of \(\alpha\) to examine how increasing high-frequency contrast changes the image.</p>
     <figure>
       <img src="assets/img_proj2/taj_sharpening.png"
            alt="Taj Mahal sharpening" width="100%" />
@@ -164,6 +224,13 @@
     
     <h3>Part 2.2: Hybrid Images</h3>
     <p>Hybrid images combine the low frequencies of one photograph with the high frequencies of another. The high-frequency subject is more apparent up close, while the low-frequency subject becomes dominant at greater viewing distances.</p>
+        \[
+        I_{\text{hybrid}} =
+        G_{\sigma_L}*I_A +
+        \left(I_B-G_{\sigma_H}*I_B\right)
+        \]
+    <p>The Gaussian filter with standard deviation \(\sigma_L\) extracts the low frequencies of the first image. Subtracting a Gaussian-blurred version of the second image isolates its high frequencies.</p>
+    <p>At close range, the high-frequency details are easier to distinguish. As the image becomes smaller, these details become less perceptible, allowing the low-frequency subject to dominate.</p>
     <p>I aligned Derek and Nutmeg using corresponding facial features, then combined low-frequency Derek with high-frequency Nutmeg. Alignment was important because mismatched features made the two subjects compete rather than form a convincing hybrid.</p>
     <figure>
       <img src="assets/img_proj2/derek_nutmeg_process.png"
@@ -187,6 +254,21 @@
 
     <h3>Part 2.3: Gaussian and Laplacian Stacks</h3>
     <p>I implemented Gaussian and Laplacian stacks to decompose images across multiple spatial scales. Each Gaussian level is progressively smoother, while each Laplacian level captures the details removed between successive Gaussian levels. Unlike pyramids, these stacks preserve the original image dimensions.</p>
+    <p>I constructed Gaussian stacks by repeatedly smoothing the previous level:</p>
+        \[
+        G_0 = I,
+        \qquad
+        G_{i+1} = G_\sigma * G_i
+        \]
+    <p>I then constructed the Laplacian stack by subtracting adjacent Gaussian levels:</p>
+        \[
+        L_i = G_i - G_{i+1}
+        \]
+    <p>The final Laplacian level retains the lowest-frequency Gaussian image. Because the differences telescope, the original image can be reconstructed by summing the Laplacian levels:</p>
+       \[
+       I = \sum_{i=0}^{N}L_i
+       \]
+    <p>Unlike image pyramids, my stacks preserve the original image dimensions at every level. This allows corresponding pixels from different frequency bands to be blended directly.</p>
     <figure>
       <img src="assets/img_proj2/apple_stacks.png"
            alt="Gaussian stacks" width="100%" />
@@ -205,6 +287,61 @@
     
     <h3>Part 2.4: Multiresolution Blending (The Oraple!)</h3>
     <p>I implemented multiresolution blending using Laplacian stacks for the input photographs and a Gaussian stack for the mask. At each level, the blurred mask determines the contribution from each image. Summing the blended levels produces the final result.</p>
+    <p>At each level, I combined the corresponding Laplacian images using the blurred mask:</p>
+    <p>I first recreated the classic apple-orange blend using a vertical mask. Blending different frequency bands with progressively smoother masks helps soften the transition between the two photographs.</p>
+        \[
+        L_{\text{blend}}^i =
+        G_M^i \odot L_A^i +
+        (1-G_M^i)\odot L_B^i
+        \]
+    <p>Here, \(G_M^i\) is the Gaussian-smoothed mask at level \(i\), and \(\odot\) denotes elementwise multiplication.</p>
+    <p>I reconstructed the final blended image by summing the blended Laplacian levels:</p>
+        \[
+        I_{\text{blend}} =
+        \sum_{i=0}^{N}L_{\text{blend}}^i
+        \]
+    <p>Because the mask becomes smoother at coarser levels, low-frequency features transition more gradually while high-frequency details can transition over a narrower region.</p>
+    <figure>
+      <img src="images/oraple.png"
+           alt="Apple-orange blend" width="100%" />
+      <figcaption>
+        Original photographs, vertical mask,
+        and final Oraple.
+      </figcaption>
+    </figure>
+    <figure>
+      <img src="images/oraple_breakdown.png"
+           alt="Oraple blending decomposition"
+           width="100%" />
+      <figcaption>
+        Apple, orange, and combined contributions
+        at three Laplacian levels, followed by
+        the summed contributions and final blend.
+      </figcaption>
+    </figure>
+    <p>
+      I applied the same technique to a fruit tree and cherry blossom tree using a straight vertical mask.
+      [DESCRIBE THE RESULT AND WHETHER
+      THE SEAM REMAINS VISIBLE.]
+    </p>
+    <figure>
+      <img src="images/custom_vertical.png"
+           alt="Custom vertical blend" width="100%" />
+      <figcaption>
+        Input photographs, vertical mask,
+        and final multiresolution blend.
+      </figcaption>
+    </figure>
+
+    <p>For my irregular-mask experiment, I replaced the view through a doorway with another landscape. I created a mask following the doorway's opening so the surrounding architecture would remain intact while the interior was blended with the replacement scene.</p>
+    <figure>
+      <img src="images/doorway_blend.png"
+           alt="Doorway irregular-mask blend" width="100%" />
+      <figcaption>
+        Original doorway, replacement landscape,
+        irregular mask, and final blend.
+      </figcaption>
+    </figure>
 
     <h3>Challenges</h3>
 
