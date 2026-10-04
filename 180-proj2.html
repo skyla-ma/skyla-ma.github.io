@@ -220,6 +220,7 @@
     </figure>
     <p>By the associativity of convolution, applying these combined filters should produce approximately the same results as smoothing and differentiating separately, provided the boundary handling is consistent.</p>
     <p>I compared the derivative-of-Gaussian results against smoothing followed by differentiation. The maximum absolute difference in the interior was 1.12e-15 for Dx and 1.17e-15 for Dy. The two approaches produce nearly identical results away from the image boundaries, consistent with the associativity of convolution.</p>
+    <p>Compared with the plain finite-difference method, Gaussian smoothing produces a cleaner edge map with less background noise and smoother, slightly thicker edges. However, some weaker edges and fine details disappear in the process. The DoG method produces essentially the same result as smoothing first and then applying the finite-difference operators.</p>
 
     <h3>Part 2.1: Image "Sharpening"</h3>
     <p>I implemented unsharp masking by subtracting a Gaussian-blurred image from the original to isolate high-frequency details. Adding a scaled version of these details back to the original increases local contrast around edges.</p>
