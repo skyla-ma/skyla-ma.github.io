@@ -27,7 +27,8 @@
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 18px;
-      margin: 24px 0;
+      max-width: 450px;
+      margin: 24px auto;
     }
     .proj3-grid figure {
       margin: 0;
@@ -322,13 +323,13 @@
       channels.
     </p>
 
-    <figure class="proj3-figure">
+    <!-- <figure class="proj3-figure">
       <img src="assets/proj3/velocity_original.png"
            alt="Original image for velocity analysis">
       <figcaption>
         Original jellyfish image used for the velocity comparison.
       </figcaption>
-    </figure>
+    </figure> -->
 
     <figure class="proj3-figure">
       <img src="assets/proj3/velocity_0.25.png"
@@ -596,12 +597,12 @@
     </figure>
 
     <p>
-      At smaller starting times, the image contains
-      more noise, allowing the model to make larger
-      changes. At larger starting times, more of the
-      original Campanile structure is preserved.
-      [Add one or two specific observations from your
-      generated Campanile results.]
+      At the smallest starting times, the model completely changes the
+      Campanile, initially generating a rounded white structure instead
+      of the original tower. As the starting time increases, the tower
+      gradually becomes more recognizable. By t = 0.25 and t = 0.50,
+      the model preserves much more of the original architecture,
+      including the windows at the top and the surrounding trees.
     </p>
 
     <h4>My Image 1: Jellyfish</h4>
@@ -616,10 +617,12 @@
     </figure>
 
     <p>
-      I repeated the same procedure using my jellyfish
-      photograph. [Describe which starting times
-      preserved the jellyfish and which generated
-      substantially different content.]
+      The results for the jellyfish were pretty interesting. At t = 0.02,
+      the model generated a portrait of a woman, completely ignoring the
+      original image. At intermediate starting times, it produced abstract
+      orange and blue shapes that loosely resembled the jellyfish. By
+      t = 0.25 and t = 0.50, the original jellyfish and their tentacles
+      were much more recognizable.
     </p>
 
     <h4>My Image 2: Llama</h4>
@@ -635,8 +638,12 @@
 
     <p>
       For the second test image, I used a llama image.
-      [Describe how the llama's shape, appearance,
-      and background change across the starting times.]
+      At t = 0.02, the model generated a human portrait instead of a
+      llama. At t = 0.04 and t = 0.06, it produced images of people
+      holding objects, which were also completely different from the
+      original. Starting around t = 0.10, the llama began to reappear.
+      At larger starting times, its face, ears, and fur became
+      increasingly similar to the original photograph.
     </p>
 
     <h4>Editing an Image from the Web</h4>
@@ -657,9 +664,12 @@
     </figure>
 
     <p>
-      [Identify the web image and describe how the
-      generated results change as the starting
-      time increases.]
+      For the web image, I used an illustration of an orange cat sitting
+      inside a jack-o'-lantern. At smaller starting times, the model
+      generated unrelated images, including a portrait and a bottle.
+      As the starting time increased, the orange cat and pumpkin
+      gradually reappeared. By t = 0.25 and t = 0.50, the model
+      preserved most of the original Halloween composition.
     </p>
 
     <h4>Editing Hand-Drawn Images</h4>
@@ -682,6 +692,14 @@
       </figcaption>
     </figure>
 
+    <p>
+      For my first drawing, I used a blue magician's hat with a feather
+      and ribbon. At smaller starting times, the model initially
+      generated a blue rectangular object or a simplified hat without
+      its decorations. As the starting time increased, the feather,
+      ribbon, and original hat shape gradually returned.
+    </p>
+
     <figure class="proj3-figure">
       <img src="assets/proj3/edit_drawing_2.png"
            alt="Second hand-drawn image and seven edits">
@@ -692,9 +710,11 @@
     </figure>
 
     <p>
-      [Describe both drawings and explain which
-      features the model preserved or reinterpreted
-      at different noise levels.]
+      My second drawing was an orange pumpkin with a green stem and
+      vines. At the smallest starting time, the model interpreted it
+      as a tomato. At intermediate times, it generated more realistic
+      orange pumpkins, while the larger starting times preserved the
+      cartoon style and decorative vines of the original drawing.
     </p>
 
     <h3 class="proj3-subsection">
@@ -719,7 +739,7 @@
 
     <p>
       <strong>Prompt:</strong>
-      [Insert your exact Campanile editing prompt]
+      a tall birch tree
     </p>
 
     <figure class="proj3-figure">
@@ -732,16 +752,20 @@
     </figure>
 
     <p>
-      [Explain how the chosen prompt changes the
-      Campanile and at which starting times the
-      original tower remains recognizable.]
+      I tried transforming the Campanile into a tall birch tree. At
+      smaller starting times, the model successfully generated a
+      white tree trunk with dark markings and branches at the top.
+      Interestingly, the tall, narrow shape of the Campanile works
+      well for this transformation. At larger starting times,
+      the tower gradually reappears, although some of the tree-like
+      textures remain.
     </p>
 
     <h4>My Image 1: Jellyfish</h4>
 
     <p>
       <strong>Prompt:</strong>
-      [Insert your exact jellyfish editing prompt]
+      a spotted mushroom in the forest
     </p>
 
     <figure class="proj3-figure">
@@ -754,15 +778,21 @@
     </figure>
 
     <p>
-      [Describe how the prompt changes the underwater
-      scene and which original details remain visible.]
+      I tried turning the jellyfish into a spotted mushroom. At
+      smaller starting times, the model generated recognizable
+      mushrooms with spotted caps. At intermediate times, the
+      mushroom shapes began blending with the orange and blue
+      underwater scene. I thought this was an interesting result
+      because the rounded jellyfish bodies resemble mushroom caps.
+      At larger starting times, the original jellyfish became
+      more prominent again.
     </p>
 
     <h4>My Image 2: Llama</h4>
 
     <p>
       <strong>Prompt:</strong>
-      [Insert your exact llama editing prompt]
+      a sitting dragon in a yard
     </p>
 
     <figure class="proj3-figure">
@@ -775,8 +805,13 @@
     </figure>
 
     <p>
-      [Describe how the llama image changes under
-      the chosen text prompt.]
+      For the llama, I tried generating a sitting dragon in a yard.
+      At smaller starting times, the model produced an entirely
+      different dragon-like creature. At intermediate times, the
+      dragon's head and horns began overlapping with the llama's
+      original body and background. By t = 0.25 and t = 0.50,
+      the image looked much closer to the original llama, with
+      fewer dragon-like features.
     </p>
 
     <p>
@@ -845,9 +880,13 @@
     </figure>
 
     <p>
-      [Describe whether the sailboat and mountain
-      are recognizable in their respective
-      orientations.]
+      This visual anagram was a little less successful than I expected. In the
+      upright orientation, there is a small sailboat-like shape near
+      the water, but most of the image is dominated by the sky and
+      ocean. When rotated, the same shape becomes a snowy mountain
+      peak, which is more recognizable. I think the model had an
+      easier time satisfying the mountain prompt than the sailboat
+      prompt.
     </p>
 
     <h4>Visual Anagram 2</h4>
@@ -870,9 +909,13 @@
     </figure>
 
     <p>
-      [Describe which features of the image can
-      be interpreted as a flower or jellyfish
-      depending on its orientation.]
+      This visual anagram worked much better. In the upright
+      orientation, the pink shapes resemble flower petals around
+      a central bloom, with a thin green stem underneath. When
+      rotated, the same pink structure resembles a jellyfish
+      with a rounded bell and trailing tentacles. I think this
+      pair worked well because flower petals and jellyfish
+      tentacles have similar curved shapes.
     </p>
 
     <p>
@@ -950,8 +993,13 @@
     </div>
 
     <p>
-      [Describe which subject is more recognizable
-      up close and which appears at a distance.]
+      This hybrid did not produce a very strong illusion. The
+      full-size image clearly resembles a tiger's face, with
+      visible whiskers, eyes, and a feline nose. When reduced
+      to 64 by 64 pixels, the image becomes blurrier, but the
+      tiger is still the dominant subject. The human face is
+      not particularly recognizable, suggesting that the
+      tiger prompt had a stronger influence on the result.
     </p>
 
     <h4>Hybrid Image 2</h4>
@@ -982,8 +1030,13 @@
     </div>
 
     <p>
-      [Describe how the apparent subject changes
-      when the image is viewed at a smaller size.]
+      For this hybrid, the full-size image shows a detailed
+      antique clock against a dark circular background. When
+      reduced in size, the clock details become less distinct,
+      but the overall circular structure remains. The result
+      does not clearly turn into a full moon, although the
+      round shape and dark background are consistent with
+      the low-frequency moon prompt.
     </p>
 
     <p>
