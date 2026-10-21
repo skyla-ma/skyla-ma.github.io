@@ -1050,7 +1050,7 @@
       throughout the generation process.
     </p>
 
-    <h2 class="proj3-section">Conclusion</h2>
+    <h2 class="proj3-section">Part A Reflection</h2>
 
     <p>
       This project helped me understand how
@@ -1581,20 +1581,11 @@
 </div>
 
 <p>
-  Class conditioning makes it possible to specify the desired
-  digit instead of relying on whichever digit an unconditional
-  model produces. Comparing the checkpoints also makes it
-  possible to evaluate changes in digit clarity, class
-  consistency, and diversity as training progresses.
+  The class-conditioned models were able to generate recognizable examples of most digits, even after the first epoch. By epochs 5 and 10, the samples generally looked more consistent with their target classes, although some digits were still distorted or difficult to read.
 </p>
 
 <p>
-  The learning-rate comparison illustrates the tradeoff
-  between gradually reducing parameter updates and keeping
-  them constant throughout training. The generated samples
-  provide a qualitative way to evaluate whether a more
-  stable optimization trajectory translates into better
-  image quality.
+  Both learning-rate strategies produced recognizable digits. The differences between them were not especially dramatic in these samples, so I don't think the scheduler clearly outperformed the constant learning rate based on visual quality alone. The scheduler reduced the learning rate over time, while the constant-rate model continued making larger updates. Overall, both approaches worked reasonably well for this experiment.
 </p>
 
 <h2 class="proj3-section">Part B Reflection</h2>
@@ -1606,21 +1597,11 @@
 </p>
 
 <p>
-  The pure-noise denoising experiment demonstrated how
-  MSE optimization can lead to averaged predictions when
-  the input contains no information about the target.
-  Flow matching addresses this limitation by learning
-  a velocity field and gradually transforming noise into
-  images through numerical integration.
+  The biggest takeaway from Part B was seeing why generating an image from pure noise is different from denoising an existing image. When I trained the UNet to predict MNIST digits directly from random noise, it mostly produced blurry, average-looking shapes. With flow matching, the model instead learned to make a series of smaller updates, which resulted in much more recognizable digits.
 </p>
 
 <p>
-  Adding time conditioning allows the model to adapt its
-  predictions throughout the generation process, while
-  class conditioning provides control over the generated
-  digit. Classifier-free guidance further strengthens
-  this conditioning by combining conditional and
-  unconditional velocity estimates.
+  I also found it interesting how much adding class conditioning changed the task. The unconditional model could generate digit-like images, but I couldn't control which digit appeared. With class conditioning and classifier-free guidance, I could generate specific digits and compare how the results changed across training epochs. The scheduler experiment was also useful because both models produced reasonable samples, even though they used different learning-rate strategies.
 </p>
 
 <!-- ================= END PART B ================= -->
