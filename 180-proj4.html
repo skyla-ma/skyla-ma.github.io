@@ -219,27 +219,6 @@
       using least squares with <code>np.linalg.lstsq</code>.
     </p>
 
-    <pre><code>def computeH(im1_pts, im2_pts):
-    n = im1_pts.shape[0]
-    A = []
-    b = []
-
-    for i in range(n):
-        x, y = im1_pts[i]
-        xp, yp = im2_pts[i]
-
-        A.append([x, y, 1, 0, 0, 0, -x*xp, -y*xp])
-        A.append([0, 0, 0, x, y, 1, -x*yp, -y*yp])
-        b.append(xp)
-        b.append(yp)
-
-    A = np.array(A)
-    b = np.array(b)
-
-    h = np.linalg.lstsq(A, b, rcond=None)[0]
-    H = np.append(h, 1).reshape(3, 3)
-
-    return H</code></pre>
 
     <h3>Recovered Homography</h3>
     <p>
