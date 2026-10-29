@@ -366,7 +366,7 @@
       Bilinear interpolation blends nearby pixels, making edges and
       textures appear smoother, although the difference is not very noticeable in my examples. I used bilinear interpolation for the
       final mosaics because it generally produces better-looking
-      warped images.
+      warped images. Nearest neighbor interpolation is generally faster because it only requires sampling one pixel, while bilinear interpolation involves computing a weighted average of four neighboring pixels.
     </p>
 
     <h2>Part A.4: Blend Images into a Mosaic</h2>
@@ -404,9 +404,7 @@
     <p>
       This helps blend the images smoothly while avoiding the hard
       boundary that would appear if one image completely overwrote
-      the other. Some minor ghosting can still occur when the
-      correspondences are imperfect or when there is parallax
-      between the photographs.
+      the other. Some ghosting can still occur when the images are not perfectly aligned, since weighted averaging blends the overlapping regions together.
     </p>
 
     <h3>Mosaic 1</h3>
@@ -466,7 +464,7 @@
       fairly large overlapping region, which made it easier to select
       accurate correspondences. The second mosaic has a smaller overlapping
       region, which made it more difficult to find matching points, and the resulting mosaic had a warped building on the right. 
-      For the third mosaic, there is some stitching artifacts near the center-left, where the road and the ledge overlap unnaturally. The moving car
+      For the third mosaic, there are some stitching artifacts near the center-left, where the road and the ledge overlap unnaturally. The moving car
       may have contributed to this ghosting.
     </p>  
     <p>
