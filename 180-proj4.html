@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project 4 — Image Warping and Mosaicing</title>
+  <link rel="stylesheet" href="/assets/css/style.css" />
+
+  <style>
+    .project-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 40px 24px;
+    }
+
+    .project-container h1 {
+      margin-bottom: 8px;
+    }
+
+    .project-container h2 {
+      margin-top: 48px;
+      margin-bottom: 16px;
+    }
+
+    .project-container h3 {
+      margin-top: 28px;
+      margin-bottom: 12px;
+    }
+
+    .project-container p {
+      line-height: 1.7;
+    }
+
+    .image-row {
+      display: flex;
+      gap: 16px;
+      margin: 24px 0;
+      align-items: flex-start;
+    }
+
+    .image-item {
+      flex: 1;
+      min-width: 0;
+      text-align: center;
+    }
+
+    .image-item img {
+      width: 100%;
+      height: auto;
+      border-radius: 6px;
+    }
+
+    .image-item p {
+      margin-top: 8px;
+      font-size: 0.9rem;
+      color: #666;
+    }
+
+    .result-image {
+      text-align: center;
+      margin: 24px 0;
+    }
+
+    .result-image img {
+      max-width: 100%;
+      max-height: 650px;
+      height: auto;
+      border-radius: 6px;
+    }
+
+    .caption {
+      text-align: center;
+      font-size: 0.9rem;
+      color: #666;
+      margin-top: 8px;
+    }
+
+    .equation {
+      text-align: center;
+      margin: 24px 0;
+      overflow-x: auto;
+    }
+
+    pre {
+      overflow-x: auto;
+      padding: 16px;
+      border-radius: 6px;
+      background: #f5f5f5;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 650px) {
+      .image-row {
+        flex-direction: column;
+      }
+
+      .image-item {
+        width: 100%;
+      }
+    }
+  </style>
+
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['\\(', '\\)']] }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+</head>
+
+<body>
+<div class="project-container">
+  <article>
+
+    <h1>Project 4: Image Warping and Mosaicing</h1>
+    <p class="byline">CS 180 — Fall 2026</p>
+
+    <h2>Overview</h2>
+    <p>
+      In this project, I implemented image warping and mosaicing using
+      homographies. By identifying corresponding points between overlapping
+      photographs, I computed projective transformations to align the images.
+      I then implemented nearest neighbor and bilinear interpolation for
+      inverse warping, and used weighted averaging to blend images together
+      into mosaics.
+    </p>
+
+    <h2>Part A.1: Shoot the Pictures</h2>
+    <p>
+      I took sets of overlapping photographs by rotating the camera
+      while keeping its position approximately fixed. Each pair has a
+      pretty significant overlapping region, which allowed me to identify matching
+      features and estimate a homography between the images. Below are two examples.
+    </p>
+
+    <h3>Image Set 1</h3>
+    <div class="image-row">
+      <div class="image-item">
+        <img src="/assets/proj4/image1.jpg" alt="First image of set 1">
+        <p>Image 1</p>
+      </div>
+      <div class="image-item">
+        <img src="/assets/proj4/image2.jpg" alt="Second image of set 1">
+        <p>Image 2</p>
+      </div>
+    </div>
+
+    <h3>Image Set 2</h3>
+    <div class="image-row">
+      <div class="image-item">
+        <img src="/assets/proj4/mosaic2_1.jpg" alt="First image of set 2">
+        <p>Image 1</p>
+      </div>
+      <div class="image-item">
+        <img src="/assets/proj4/mosaic2_2.jpg" alt="Second image of set 2">
+        <p>Image 2</p>
+      </div>
+    </div>
+
+    <h2>Part A.2: Recover Homographies</h2>
+    <p>
+      To align two images, I first selected corresponding points in their
+      overlapping regions. I used recognizable features such as corners
+      and edges of buildings to identify the same locations in both images.
+      I then used these point correspondences to calculate a homography.
+    </p>
+
+    <h3>Point Correspondences</h3>
+    <div class="result-image">
+      <img src="/assets/proj4/correspondences.png"
+           alt="Corresponding points marked on two images">
+      <p class="caption">
+        Corresponding points marked with matching indices in both images.
+      </p>
+    </div>
+
+    <h3>Computing the Homography</h3>
+    <p>
+      A homography maps a point from one image to another using a 3 by 3
+      matrix. Since the matrix is defined up to scale, I set its bottom-right
+      entry to 1, leaving eight unknown parameters.
+    </p>
+
+    <div class="equation">
+      \[
+      \begin{bmatrix}
+      x' \\ y' \\ 1
+      \end{bmatrix}
+      \sim
+      \begin{bmatrix}
+      h_1 & h_2 & h_3 \\
+      h_4 & h_5 & h_6 \\
+      h_7 & h_8 & 1
+      \end{bmatrix}
+      \begin{bmatrix}
+      x \\ y \\ 1
+      \end{bmatrix}
+      \]
+    </div>
+
+    <p>
+      Expanding the equations and rearranging gives two linear equations
+      for each pair of corresponding points:
+    </p>
+
+    <div class="equation">
+      \[
+      \begin{aligned}
+      xh_1 + yh_2 + h_3 - xx'h_7 - yx'h_8 &= x' \\
+      xh_4 + yh_5 + h_6 - xy'h_7 - yy'h_8 &= y'
+      \end{aligned}
+      \]
+    </div>
+
+    <p>
+      I stacked these equations for all point correspondences to construct
+      a linear system \(Ah = b\). Since I used more than four point pairs,
+      the system is overdetermined, so I solved for the homography parameters
+      using least squares with <code>np.linalg.lstsq</code>.
+    </p>
+
+    <pre><code>def computeH(im1_pts, im2_pts):
+    n = im1_pts.shape[0]
+    A = []
+    b = []
+
+    for i in range(n):
+        x, y = im1_pts[i]
+        xp, yp = im2_pts[i]
+
+        A.append([x, y, 1, 0, 0, 0, -x*xp, -y*xp])
+        A.append([0, 0, 0, x, y, 1, -x*yp, -y*yp])
+        b.append(xp)
+        b.append(yp)
+
+    A = np.array(A)
+    b = np.array(b)
+
+    h = np.linalg.lstsq(A, b, rcond=None)[0]
+    H = np.append(h, 1).reshape(3, 3)
+
+    return H</code></pre>
+
+    <h3>Recovered Homography</h3>
+    <p>
+      The recovered homography matrix for my first image pair is shown below.
+      This transformation maps points from the first image to corresponding
+      locations in the second image.
+    </p>
+
+    <div class="equation">
+      \[
+      H =
+      \begin{bmatrix}
+      6.17043121e-01 & -9.18446802e-03 & 2.01311497e+03 \\
+      -2.33629186e-01 & 8.84948279e-01 & 1.54621293e+02 \\
+      -8.90572695e-05 & -6.17162973e-07 & 1.00000000e+00
+      \end{bmatrix}
+      \]
+    </div>
+
+    <p>
+      I also checked the homography by transforming the selected points
+      and calculating their distances from the actual corresponding points.
+      This gives the reprojection error in pixels.
+    </p>
+
+    <div class="result-image">
+      <img src="/assets/proj4/reprojection.png"
+           alt="Homography reprojection visualization">
+      <p class="caption">Reprojection results for the selected points.</p>
+    </div>
+    <p>
+      Here is another example with the second set of images.
+    </p>
+    <div class="result-image">
+      <img src="/assets/proj4/correspondences_2.png"
+           alt="Homography reprojection visualization">
+      <p class="caption">Reprojection results for the selected points.</p>
+    </div>
+    <div class="result-image">
+      <img src="/assets/proj4/reprojection_2.png"
+           alt="Homography reprojection visualization">
+      <p class="caption">Reprojection results for the selected points.</p>
+    </div>
+
+    <h2>Part A.3: Warp the Images</h2>
+    <p>
+      After computing the homography, I implemented image warping using
+      inverse mapping. First, I transformed the four corners of the input
+      image to determine the output bounding box. Then, for each pixel
+      in the output image, I applied the inverse homography to find its
+      corresponding location in the original image.
+    </p>
+
+    <p>
+      I implemented two interpolation methods to sample the source image
+      at these coordinates.
+    </p>
+
+    <h3>Nearest Neighbor Interpolation</h3>
+    <p>
+      For nearest neighbor interpolation, I rounded the source coordinates
+      to the nearest integer pixel location and copied that pixel value.
+      This is simple and fast, but it can produce jagged edges and blocky
+      artifacts when the image is enlarged or warped.
+    </p>
+
+    <h3>Bilinear Interpolation</h3>
+    <p>
+      For bilinear interpolation, I used the four neighboring pixels
+      surrounding each source coordinate. I calculated a weighted average
+      based on the horizontal and vertical distances from the source
+      coordinate to those pixels. This produces smoother results, although
+      it requires more computation than nearest neighbor interpolation.
+    </p>
+
+    <div class="equation">
+      \[
+      \begin{aligned}
+      I(x,y) ={}&
+      (1-d_x)(1-d_y)I_{00}
+      + d_x(1-d_y)I_{10} \\
+      &+ (1-d_x)d_y I_{01}
+      + d_xd_y I_{11}
+      \end{aligned}
+      \]
+    </div>
+
+    <h3>Image Rectification</h3>
+    <p>
+      To test my warping functions, I rectified images containing rectangular
+      objects photographed from an angle. I selected the four corners of
+      each object and defined a rectangular destination with the desired
+      width and height. I then computed a homography between these points
+      and warped the image using both interpolation methods.
+    </p>
+
+    <h3>Rectification 1 (Uncropped)</h3>
+    <div class="result-image">
+      <img src="/assets/proj4/rectified1.jpg"
+           alt="Original 1, Rectification 1 nearest neighbor, Rectification 1 bilinear">
+      <p class="caption">Original image, Nearest Neighbor, Bilinear</p>
+    </div>
+
+    <h3>Rectification 1 (Cropped)</h3>
+    <div class="result-image">
+      <img src="/assets/proj4/rectified1_cropped.jpg"
+           alt="Original 1, Rectification 1 nearest neighbor, Rectification 1 bilinear">
+      <p class="caption">Original image, Nearest Neighbor, Bilinear</p>
+    </div>
+
+    <h3>Rectification 2</h3>
+    <div class="result-image">
+      <img src="/assets/proj4/rectified2.jpg"
+           alt="Original 2, Rectification 2 nearest neighbor, Rectification 2 bilinear">
+      <p class="caption">Original image, Nearest Neighbor, Bilinear</p>
+    </div>
+
+
+    <h3>Comparison</h3>
+    <p>
+      Both methods successfully rectify the objects into rectangular
+      shapes. Nearest neighbor interpolation preserves the value of a
+      single source pixel, which can make the output look more pixelated.
+      Bilinear interpolation blends nearby pixels, making edges and
+      textures appear smoother, although the difference is not very noticeable in my examples. I used bilinear interpolation for the
+      final mosaics because it generally produces better-looking
+      warped images.
+    </p>
+
+    <h2>Part A.4: Blend Images into a Mosaic</h2>
+    <p>
+      To create each mosaic, I chose one image as the reference and
+      warped the second image into the reference image's coordinate
+      system. I used the transformed corners to calculate the size
+      of the combined canvas and placed both images onto it.
+    </p>
+
+    <p>
+      Simply placing one image over the other would create visible
+      boundaries in the overlapping region. To reduce these seams,
+      I implemented weighted averaging. Each image receives a weight
+      that is larger near the center and decreases toward its edges.
+      I also warped the weight map of the second image so that its
+      weights align with the warped pixels.
+    </p>
+
+    <p>
+      In overlapping regions, I combined the images using:
+    </p>
+
+    <div class="equation">
+      \[
+      I_{\text{mosaic}}(x,y) =
+      \frac{
+      w_1(x,y)I_1(x,y) + w_2(x,y)I_2(x,y)
+      }{
+      w_1(x,y) + w_2(x,y)
+      }
+      \]
+    </div>
+
+    <p>
+      This helps blend the images smoothly while avoiding the hard
+      boundary that would appear if one image completely overwrote
+      the other. Some minor ghosting can still occur when the
+      correspondences are imperfect or when there is parallax
+      between the photographs.
+    </p>
+
+    <h3>Mosaic 1</h3>
+    <div class="image-row">
+      <div class="image-item">
+        <img src="/assets/proj4/image1.jpg" alt="Mosaic 1 source image 1">
+        <p>Source Image 1</p>
+      </div>
+      <div class="image-item">
+        <img src="/assets/proj4/image2.jpg" alt="Mosaic 1 source image 2">
+        <p>Source Image 2</p>
+      </div>
+    </div>
+
+    <div class="result-image">
+      <img src="/assets/proj4/mosaic1.jpg" alt="Final mosaic 1">
+      <p class="caption">Final Mosaic 1</p>
+    </div>
+
+    <h3>Mosaic 2</h3>
+    <div class="image-row">
+      <div class="image-item">
+        <img src="/assets/proj4/mosaic2_1.jpg" alt="Mosaic 2 source image 1">
+        <p>Source Image 1</p>
+      </div>
+      <div class="image-item">
+        <img src="/assets/proj4/mosaic2_2.jpg" alt="Mosaic 2 source image 2">
+        <p>Source Image 2</p>
+      </div>
+    </div>
+
+    <div class="result-image">
+      <img src="/assets/proj4/mosaic2.jpg" alt="Final mosaic 2">
+      <p class="caption">Final Mosaic 2</p>
+    </div>
+
+    <h3>Mosaic 3</h3>
+    <div class="image-row">
+      <div class="image-item">
+        <img src="/assets/proj4/mosaic3_1.jpg" alt="Mosaic 3 source image 1">
+        <p>Source Image 1</p>
+      </div>
+      <div class="image-item">
+        <img src="/assets/proj4/mosaic3_2.jpg" alt="Mosaic 3 source image 2">
+        <p>Source Image 2</p>
+      </div>
+    </div>
+
+    <div class="result-image">
+      <img src="/assets/proj4/mosaic3.jpg" alt="Final mosaic 3">
+      <p class="caption">Final Mosaic 3</p>
+    </div>
+
+    <h2>Reflection</h2>
+    <p>
+      Some of my mosaics turned out better than others. The first mosaic has a
+      fairly large overlapping region, which made it easier to select
+      accurate correspondences. The second mosaic has a smaller overlapping
+      region, which made it more difficult to find matching points, and the resulting mosaic had a warped building on the right. 
+      For the third mosaic, there is some stitching artifacts near the center-left, where the road and the ledge overlap unnaturally. The moving car
+      may have contributed to this ghosting.
+    </p>  
+    <p>
+      Overall, this project helped me understand how homographies can be used to
+      align images taken from different viewpoints. One of the biggest
+      challenges was selecting accurate point correspondences, since
+      small errors could noticeably affect the alignment of the warped
+      images. Implementing inverse warping and interpolation also helped
+      me better understand how pixel values are sampled during geometric
+      transformations.
+    </p>
+
+    <p>
+      I also learned that correctly aligning images is only part of
+      creating a good mosaic. Blending is important for reducing
+      visible seams, and even with weighted averaging, differences
+      in perspective or camera position can still cause ghosting.
+    </p>
+
+    <p class="byline">
+      <a href="projects.html">&larr; Back to all summaries</a>
+    </p>
+
+  </article>
+</div>
+</body>
+</html>
