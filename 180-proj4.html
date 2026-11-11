@@ -484,6 +484,7 @@ without manually selecting corresponding points.
       In the beginning, the computation was taking a very long time as my images were large. I resized my images before running the detector to reduce the
       computation time.
     </p>
+    
 
     <h3>Adaptive Non-Maximal Suppression (ANMS)</h3>
     <p>
@@ -538,6 +539,7 @@ without manually selecting corresponding points.
       dividing by its standard deviation. This makes the descriptors
       less sensitive to differences in brightness and contrast
       between the two images.
+      Downsampling also makes the descriptor less sensitive to small differences in the exact corner location, since each descriptor captures the general appearance of a larger region rather than individual pixels.
     </p>
 
     <div class="equation">
@@ -546,10 +548,6 @@ without manually selecting corresponding points.
       \]
     </div>
 
-    <p>
-      I did not implement rotation invariance or multiscale feature
-      extraction, as specified in the project instructions.
-    </p>
 
     <div class="result-image">
       <img src="/assets/proj4/b2_descriptors.png"
@@ -617,6 +615,10 @@ without manually selecting corresponding points.
     </p>
 
     <p>
+      A homography has eight degrees of freedom, and each point correspondence provides two equations. Therefore, four matching point pairs are the minimum needed to estimate a homography. RANSAC repeatedly samples these small sets so that some iterations can produce a good estimate even when the initial matches contain outliers.
+    </p>
+
+    <p>
       In each iteration, I randomly selected four matching point
       pairs and used them to compute a candidate homography.
       I then transformed all the matched points using this
@@ -624,6 +626,7 @@ without manually selecting corresponding points.
       Points with errors below a threshold of 3 pixels were
       considered inliers.
     </p>
+
 
     <p>
       I repeated this process for 2000 iterations and kept
@@ -661,10 +664,10 @@ without manually selecting corresponding points.
     <h3>Automatic Mosaic 1</h3>
 
     <p>
-      The automatic mosaic looks very similar to the manually
-      stitched result from Part A. Both methods estimate a
+      The first thing I noticed is that the automatic mosaic looks very similar to the manually
+      stitched result from Part A. This could be because both methods estimate a
       homography between the same images, but the automatic
-      approach does not require manually selecting matching points.
+      approach just does not require manually selecting matching points.
     </p>
 
     <div class="image-row">
@@ -679,7 +682,8 @@ without manually selecting corresponding points.
 
     <p>
       I repeated the automatic feature detection, matching, and
-      RANSAC process for my second image pair.
+      RANSAC process for my second image pair. We can see that the automatically stitched mosaic appears
+      to have a slightly less extreme warp than the manually stitched mosaic for the building on the right.
     </p>
 
     <div class="image-row">
@@ -695,8 +699,7 @@ without manually selecting corresponding points.
     <h3>Automatic Mosaic 3</h3>
 
     <p>
-      Finally, I applied the same automatic stitching pipeline
-      to my third image pair.
+      Here is my third image pair.
     </p>
 
     <div class="image-row">
@@ -705,6 +708,11 @@ without manually selecting corresponding points.
             alt="Automatically stitched mosaic 3">
       </div>
     </div>
+
+    <p>
+      The images still look incredibly similar! They even have similar distortions. For example, in both mosaics, it appears
+      that the ledge is slightly fading onto the road. This tells me that automatically finding correspondences can work just as well as manually selecting them, but the quality of the final mosaic still depends on how accurately the images can be aligned.
+    </p>
 
 
     <!-- Part B Reflection -->
