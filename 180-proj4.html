@@ -122,7 +122,9 @@
       photographs, I computed projective transformations to align the images.
       I then implemented nearest neighbor and bilinear interpolation for
       inverse warping, and used weighted averaging to blend images together
-      into mosaics.
+      into mosaics. In Part B, I also implemented automatic image stitching using Harris corner detection,
+feature descriptors, feature matching, and RANSAC to estimate homographies
+without manually selecting corresponding points.
     </p>
 
     <h2>Part A.1: Shoot the Pictures</h2>
@@ -461,6 +463,270 @@
       creating a good mosaic. Blending is important for reducing
       visible seams, and even with weighted averaging, differences
       in perspective or camera position can still cause ghosting.
+    </p>
+
+    <h2>Part B.1: Harris Corner Detection</h2>
+
+    <p>
+      For Part B, I implemented automatic image stitching based on the
+      paper "Multi-Image Matching using Multi-Scale Oriented Patches" by Matthew Brown, Richard Szeliski, and Simon Winder. Instead of manually selecting corresponding
+      points between images, I used Harris corner detection, feature
+      descriptors, feature matching, and RANSAC to automatically compute
+      the homography between two images.
+    </p>
+
+    <h3>Harris Corner Detection</h3>
+    <p>
+      I started by using the provided Harris corner detector to find
+      interest points in each image. Harris corner detection identifies
+      points where the image intensity changes significantly in multiple
+      directions, such as the corners of buildings and windows.
+      In the beginning, the computation was taking a very long time as my images were large. I resized my images before running the detector to reduce the
+      computation time.
+    </p>
+
+    <h3>Adaptive Non-Maximal Suppression (ANMS)</h3>
+    <p>
+      The Harris detector returned a large number of corners, many of
+      which were clustered together. To select a smaller and more evenly
+      distributed set of interest points, I implemented adaptive
+      non-maximal suppression (ANMS).
+    </p>
+
+    <p>
+      For each corner, I calculated its suppression radius, which is the
+      distance to the nearest corner with a significantly stronger Harris
+      response. I then selected the 500 corners with the largest
+      suppression radii. This helped distribute the selected features
+      across different parts of the image instead of concentrating them
+      only in highly textured regions.
+    </p>
+
+    <div class="equation">
+      \[
+      r_i = \min_{j:\,f_i < 0.9f_j}
+      \|p_i - p_j\|
+      \]
+    </div>
+
+    <div class="result-image">
+      <!-- TODO: Replace with your ANMS comparison figure -->
+      <img src="/assets/proj4/b1_anms.png"
+          alt="Harris corners before and after ANMS">
+      <p class="caption">
+        Harris corners before and after ANMS. The right image shows
+        the 500 selected interest points.
+      </p>
+    </div>
+
+
+    <!-- Part B.2: Feature Descriptor Extraction -->
+
+    <h2>Part B.2: Feature Descriptor Extraction</h2>
+
+    <p>
+      After selecting the interest points, I extracted a feature
+      descriptor for each corner. Following the simplified MOPS
+      approach, I used an axis-aligned 40 by 40 pixel window centered
+      at each interest point. I applied Gaussian smoothing and
+      downsampled the window to an 8 by 8 patch.
+    </p>
+
+    <p>
+      Each 8 by 8 patch was flattened into a 64-dimensional vector.
+      I then normalized each descriptor by subtracting its mean and
+      dividing by its standard deviation. This makes the descriptors
+      less sensitive to differences in brightness and contrast
+      between the two images.
+    </p>
+
+    <div class="equation">
+      \[
+      d' = \frac{d - \mu_d}{\sigma_d}
+      \]
+    </div>
+
+    <p>
+      I did not implement rotation invariance or multiscale feature
+      extraction, as specified in the project instructions.
+    </p>
+
+    <div class="result-image">
+      <img src="/assets/proj4/b2_descriptors.png"
+          alt="Examples of normalized 8 by 8 feature descriptors">
+      <p class="caption">
+        Examples of normalized 8 by 8 feature descriptors extracted
+        from the selected Harris corners.
+      </p>
+    </div>
+
+
+    <!-- Part B.3: Feature Matching -->
+
+    <h2>Part B.3: Feature Matching</h2>
+
+    <p>
+      Next, I matched the feature descriptors between the two images.
+      For each descriptor in the first image, I calculated its
+      sum of squared differences (SSD) with every descriptor in
+      the second image.
+    </p>
+
+    <p>
+      I then found the closest and second-closest descriptors and
+      applied Lowe's nearest-neighbor ratio test. A match was accepted
+      if the ratio between the smallest and second-smallest SSD
+      distances was below a threshold of 0.7.
+    </p>
+
+    <div class="equation">
+      \[
+      \frac{SSD_{\text{nearest}}}
+          {SSD_{\text{second nearest}}} < 0.7
+      \]
+    </div>
+
+    <p>
+      This helps reject ambiguous matches where multiple descriptors
+      look similarly close to the same feature. For my first image
+      pair, I obtained 165 matches using this threshold.
+      Some of these matches were incorrect, so I used RANSAC in
+      the next step to identify the consistent correspondences.
+    </p>
+
+    <div class="result-image">
+      <!-- TODO: Replace with your feature matching visualization -->
+      <img src="/assets/proj4/b3_matches.png"
+          alt="Feature matches between two images">
+      <p class="caption">
+        Feature matches between the first image pair using
+        SSD and Lowe's ratio test.
+      </p>
+    </div>
+
+
+    <!-- Part B.4: RANSAC for Robust Homography -->
+
+    <h2>Part B.4: RANSAC for Robust Homography</h2>
+
+    <p>
+      Although the ratio test removed many ambiguous matches,
+      some incorrect correspondences remained. To estimate a
+      homography without being affected by these outliers,
+      I implemented four-point RANSAC.
+    </p>
+
+    <p>
+      In each iteration, I randomly selected four matching point
+      pairs and used them to compute a candidate homography.
+      I then transformed all the matched points using this
+      homography and calculated their reprojection errors.
+      Points with errors below a threshold of 3 pixels were
+      considered inliers.
+    </p>
+
+    <p>
+      I repeated this process for 2000 iterations and kept
+      the homography with the largest number of inliers.
+      Finally, I recomputed the homography using all the
+      inliers from the best iteration.
+    </p>
+
+    <div class="equation">
+      \[
+      e_i = \|H(p_i) - p_i'\|_2
+      \]
+    </div>
+
+    <p>
+      For my first image pair, RANSAC found 113 inliers out of
+      the 165 initial feature matches. I used the resulting
+      homography with my warping and blending functions from
+      Part A to create the automatic mosaic.
+    </p>
+
+    <div class="result-image">
+      <!-- TODO: Replace with your RANSAC inlier matches figure -->
+      <img src="/assets/proj4/b4_inliers.png"
+          alt="Feature matches remaining after RANSAC">
+      <p class="caption">
+        Feature correspondences remaining after RANSAC.
+        The incorrect matches have mostly been removed.
+      </p>
+    </div>
+
+
+    <!-- Automatic Mosaics -->
+
+    <h3>Automatic Mosaic 1</h3>
+
+    <p>
+      The automatic mosaic looks very similar to the manually
+      stitched result from Part A. Both methods estimate a
+      homography between the same images, but the automatic
+      approach does not require manually selecting matching points.
+    </p>
+
+    <div class="image-row">
+      <div class="image-item">
+        <img src="/assets/proj4/b4_auto_mosaic1.png"
+            alt="Automatically stitched mosaic 1">
+      </div>
+    </div>
+
+
+    <h3>Automatic Mosaic 2</h3>
+
+    <p>
+      I repeated the automatic feature detection, matching, and
+      RANSAC process for my second image pair.
+    </p>
+
+    <div class="image-row">
+
+      <div class="image-item">
+
+        <img src="/assets/proj4/auto_mosaic2.png"
+            alt="Automatically stitched mosaic 2">
+      </div>
+    </div>
+
+
+    <h3>Automatic Mosaic 3</h3>
+
+    <p>
+      Finally, I applied the same automatic stitching pipeline
+      to my third image pair.
+    </p>
+
+    <div class="image-row">
+      <div class="image-item">
+        <img src="/assets/proj4/auto_mosaic3.png"
+            alt="Automatically stitched mosaic 3">
+      </div>
+    </div>
+
+
+    <!-- Part B Reflection -->
+
+    <h3>Part B Reflection</h3>
+
+    <p>
+      The most interesting part of Part B was seeing how the
+      homography could be recovered automatically. In Part A,
+      I had to manually choose corresponding points, but in
+      Part B, the combination of Harris corners, feature
+      descriptors, and matching allowed me to find these
+      correspondences automatically.
+    </p>
+
+    <p>
+      I also found RANSAC particularly useful because the
+      initial feature matches were not all correct. By
+      repeatedly estimating homographies from small subsets
+      of matches, RANSAC was able to identify a consistent
+      set of points and produce a mosaic that looked similar
+      to my manually stitched result.
     </p>
 
     <p class="byline">
