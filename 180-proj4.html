@@ -575,6 +575,7 @@ without manually selecting corresponding points.
       applied Lowe's nearest-neighbor ratio test. A match was accepted
       if the ratio between the smallest and second-smallest SSD
       distances was below a threshold of 0.7.
+      I chose 0.7 as a relatively strict threshold based on the trend in Figure 6b of the paper, which shows the tradeoff between accepting correct matches and rejecting incorrect ones. I could have also chosen a lower threshold to produce fewer but more reliable matches.
     </p>
 
     <div class="equation">
